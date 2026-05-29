@@ -1,25 +1,30 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
 import { User, CheckCircle2, Globe } from "lucide-react";
 import { LinkedinIcon, TwitterIcon } from "@/components/icons/SocialIcons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+const INSTRUCTOR_PHOTO = "/instructor.png";
+
 const expertise = [
-  "UX/UI Design 10+ ปี",
-  "ผู้ก่อตั้ง Studio ชื่อดัง",
-  "วิทยากรงานสัมมนาระดับประเทศ",
-  "ผู้เขียนหนังสือขายดี",
+  "สอวน. ชีววิทยา ค่าย 2 มช.",
+  "ติวเตอร์ชีววิทยา ม.ปลาย",
+  "ผู้ผ่านการอบรม สอวน. ระดับมัธยมศึกษา",
+  "ผู้สอนการเตรียมตัวสอบเข้ามหาวิทยาลัย",
 ];
 
 const stats = [
-  { value: "10K+", label: "นักเรียน" },
-  { value: "50+", label: "คอร์ส" },
-  { value: "12", label: "ปีประสบการณ์" },
+  { value: "1K+", label: "นักเรียน" },
+  { value: "5+", label: "ปีสอน" },
+  { value: "ค่าย 2", label: "ระดับ สอวน." },
 ];
 
 export function Instructor() {
+  const [photoFailed, setPhotoFailed] = useState(false);
+
   return (
     <section
       id="instructor"
@@ -37,11 +42,21 @@ export function Instructor() {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-brand-400 to-brand-700 rounded-full blur-2xl opacity-30 scale-110" />
 
-              <div className="relative h-72 w-72 lg:h-80 lg:w-80 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 border-8 border-white shadow-2xl flex items-center justify-center">
-                <User
-                  className="h-32 w-32 text-brand-700/30"
-                  strokeWidth={1}
-                />
+              <div className="relative h-72 w-72 lg:h-80 lg:w-80 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 border-8 border-white shadow-2xl flex items-center justify-center overflow-hidden">
+                {photoFailed ? (
+                  <User
+                    className="h-32 w-32 text-brand-700/30"
+                    strokeWidth={1}
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={INSTRUCTOR_PHOTO}
+                    alt="วริศ ฤทธิ์มานะ"
+                    className="h-full w-full object-cover"
+                    onError={() => setPhotoFailed(true)}
+                  />
+                )}
               </div>
 
               <motion.div
@@ -75,17 +90,18 @@ export function Instructor() {
               พบกับผู้สอน
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">
-              อาจารย์วฤศ ใจดี
+              วริศ ฤทธิ์มานะ
             </h2>
             <p className="text-brand-700 font-medium mb-5">
-              Senior Designer & Founder, Warit Studio
+              ครูชีววิทยา ระดับมัธยมศึกษาตอนปลาย
             </p>
 
             <p className="text-slate-600 leading-relaxed mb-6">
-              ผู้เชี่ยวชาญด้านการออกแบบและพัฒนาผลิตภัณฑ์ดิจิทัล
-              ด้วยประสบการณ์มากกว่า 12 ปี ได้ทำงานกับองค์กรชั้นนำมากมาย
-              ทั้งในและต่างประเทศ มีความเชื่อว่าการเรียนรู้ที่ดีคือ
-              การเรียนจากตัวอย่างจริงและลงมือทำ
+              ติวเตอร์ชีววิทยาระดับมัธยมศึกษาตอนปลาย
+              ผ่านการอบรมโครงการ สอวน. ค่าย 2 ที่มหาวิทยาลัยเชียงใหม่
+              มีประสบการณ์การสอนน้องๆ เตรียมตัวสอบเข้ามหาวิทยาลัย
+              และโอลิมปิกวิชาการ มีความเชื่อว่า การเข้าใจหลักการ
+              และการลงมือฝึกซ้ำๆ คือกุญแจสู่การเรียนรู้ชีววิทยาที่ดี
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
