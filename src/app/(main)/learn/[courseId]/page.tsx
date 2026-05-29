@@ -171,39 +171,52 @@ export default function LearnPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Video player mockup */}
-              <div
-                className={`relative aspect-video rounded-2xl overflow-hidden bg-gradient-to-br ${course.color} shadow-xl shadow-slate-900/15`}
-              >
+              {/* Video player — real iframe when the lesson has one, mockup otherwise */}
+              {activeLesson.video?.type === "youtube" ? (
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl shadow-slate-900/15">
+                  <iframe
+                    key={activeLesson.id}
+                    src={`https://www.youtube.com/embed/${activeLesson.video.id}?rel=0&modestbranding=1`}
+                    title={activeLesson.title}
+                    className="absolute inset-0 w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
                 <div
-                  className="absolute inset-0 opacity-[0.06]"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)",
-                    backgroundSize: "28px 28px",
-                  }}
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <button
-                    className="group flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-white/90 shadow-2xl hover:bg-white hover:scale-110 transition-all"
-                    aria-label="เล่น"
-                  >
-                    <Play
-                      className="h-9 w-9 sm:h-10 sm:w-10 text-brand-700 ml-1"
-                      fill="currentColor"
-                    />
-                  </button>
+                  className={`relative aspect-video rounded-2xl overflow-hidden bg-gradient-to-br ${course.color} shadow-xl shadow-slate-900/15`}
+                >
+                  <div
+                    className="absolute inset-0 opacity-[0.06]"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)",
+                      backgroundSize: "28px 28px",
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <button
+                      className="group flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-white/90 shadow-2xl hover:bg-white hover:scale-110 transition-all"
+                      aria-label="เล่น"
+                    >
+                      <Play
+                        className="h-9 w-9 sm:h-10 sm:w-10 text-brand-700 ml-1"
+                        fill="currentColor"
+                      />
+                    </button>
+                  </div>
+                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/30 backdrop-blur-md px-3 py-1 text-xs font-medium">
+                      บทที่ {activeLesson.index} / {lessons.length}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/30 backdrop-blur-md px-3 py-1 text-xs font-medium">
+                      <Clock className="h-3 w-3" />
+                      {activeLesson.duration}
+                    </span>
+                  </div>
                 </div>
-                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-black/30 backdrop-blur-md px-3 py-1 text-xs font-medium">
-                    บทที่ {activeLesson.index} / {lessons.length}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-black/30 backdrop-blur-md px-3 py-1 text-xs font-medium">
-                    <Clock className="h-3 w-3" />
-                    {activeLesson.duration}
-                  </span>
-                </div>
-              </div>
+              )}
 
               {/* Lesson info */}
               <div className="bg-white rounded-2xl border border-slate-200 p-6 mt-6 shadow-sm">

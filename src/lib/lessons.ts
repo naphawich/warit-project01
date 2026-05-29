@@ -1,4 +1,4 @@
-import type { Course } from "./data";
+import type { Course, PreviewVideo } from "./data";
 
 export type Lesson = {
   id: string;
@@ -6,6 +6,8 @@ export type Lesson = {
   title: string;
   duration: string;
   durationMinutes: number;
+  // When set, the lesson plays this real video instead of the placeholder mockup.
+  video?: PreviewVideo;
 };
 
 export type Chapter = {
@@ -99,8 +101,13 @@ export function generateCurriculum(course: Course): Chapter[] {
     const lessons: Lesson[] = [];
 
     for (let l = 0; l < lessonsInChapter; l++) {
-      const minutes = 5 + Math.floor(rng() * 18); // 5-22 min
-      const seconds = Math.floor(rng() * 60);
+      const isIntro = c === 0 && l === 0;
+      // First lesson reuses the course preview clip as its intro video.
+      const video = isIntro ? course.previewVideo : undefined;
+      const minutes = isIntro && course.previewVideo
+        ? 2 // intro clip is short by design
+        : 5 + Math.floor(rng() * 18); // 5-22 min
+      const seconds = isIntro ? 14 : Math.floor(rng() * 60);
       const duration = `${minutes}:${String(seconds).padStart(2, "0")}`;
       lessons.push({
         id: `${course.id}-${c}-${l}`,
@@ -108,6 +115,7 @@ export function generateCurriculum(course: Course): Chapter[] {
         title: lessonTitleFor(course, c, l, lessonIndex),
         duration,
         durationMinutes: minutes + seconds / 60,
+        video,
       });
       lessonIndex++;
     }
