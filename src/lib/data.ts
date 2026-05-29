@@ -1,3 +1,10 @@
+export type PreviewVideo = {
+  type: "youtube";
+  id: string;
+  // Approximate length to show on the play badge ("2:14 นาที", etc.)
+  durationLabel?: string;
+};
+
 export type Course = {
   id: number;
   title: string;
@@ -20,6 +27,7 @@ export type Course = {
   };
   whatYouLearn: string[];
   features: string[];
+  previewVideo?: PreviewVideo;
 };
 
 export const courses: Course[] = [
@@ -59,6 +67,11 @@ export const courses: Course[] = [
       "เข้าถึงได้ทุกอุปกรณ์",
       "กลุ่มผู้เรียนสำหรับถาม-ตอบ",
     ],
+    previewVideo: {
+      type: "youtube",
+      id: "wIuVvCuiJhU",
+      durationLabel: "1:38 นาที",
+    },
   },
   {
     id: 2,

@@ -112,7 +112,11 @@ export default async function CoursePage({
 
             {/* Mobile video preview */}
             <div className="lg:hidden">
-              <VideoPreview color={course.color} title={course.title} />
+              <VideoPreview
+                color={course.color}
+                title={course.title}
+                preview={course.previewVideo}
+              />
             </div>
 
             {/* Instructor */}
@@ -174,7 +178,11 @@ export default async function CoursePage({
             <div className="lg:sticky lg:top-24 space-y-4">
               {/* Video preview - desktop only */}
               <div className="hidden lg:block">
-                <VideoPreview color={course.color} title={course.title} />
+                <VideoPreview
+                color={course.color}
+                title={course.title}
+                preview={course.previewVideo}
+              />
               </div>
 
               {/* Price card */}
