@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth-server";
 import { omise } from "@/lib/omise-server";
+import { sendReceiptEmail } from "@/lib/email-server";
 
 export const runtime = "nodejs";
 
@@ -92,20 +93,22 @@ export async function POST(req: Request) {
   }
 
   if (status === "successful") {
+    const paidAt = new Date().toISOString();
+
     // 1. Mark order as paid
     const { error: updateErr } = await admin
       .from("orders")
-      .update({ status: "paid", paid_at: new Date().toISOString() })
+      .update({ status: "paid", paid_at: paidAt })
       .eq("id", orderId);
     if (updateErr) {
       console.error("[webhook] failed to mark paid", updateErr);
       return NextResponse.json({ error: "db_update_failed" }, { status: 500 });
     }
 
-    // 2. Grant entitlements (one row per course)
+    // 2. Grant entitlements + load items (need them for the receipt)
     const { data: items } = await admin
       .from("order_items")
-      .select("course_id")
+      .select("course_id, course_title, price")
       .eq("order_id", orderId);
 
     if (items && items.length > 0) {
@@ -114,7 +117,6 @@ export async function POST(req: Request) {
         course_id: it.course_id,
         order_id: orderId,
       }));
-      // upsert so re-runs don't conflict
       const { error: grantErr } = await admin
         .from("user_courses")
         .upsert(rows, { onConflict: "user_id,course_id", ignoreDuplicates: true });
@@ -125,6 +127,36 @@ export async function POST(req: Request) {
           { status: 500 }
         );
       }
+    }
+
+    // 3. Send receipt email (fire-and-forget; failure must not block webhook)
+    try {
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", order.user_id)
+        .maybeSingle();
+      const recipient = profile?.email;
+      if (recipient) {
+        const siteUrl =
+          process.env.NEXT_PUBLIC_SITE_URL ??
+          process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : "https://warit-project01.vercel.app";
+        await sendReceiptEmail({
+          to: recipient,
+          customerName: profile?.full_name ?? "",
+          orderId,
+          totalAmount: order.total_amount,
+          paidAt,
+          items: items ?? [],
+          siteUrl,
+        });
+      } else {
+        console.warn("[webhook] no email for user, skipping receipt", order.user_id);
+      }
+    } catch (e) {
+      console.error("[webhook] receipt email error (non-fatal)", e);
     }
 
     return NextResponse.json({ ok: true, status: "paid" });
