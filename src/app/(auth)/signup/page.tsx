@@ -72,6 +72,9 @@ export default function SignupPage() {
       password,
       options: {
         data: { full_name: fullName },
+        // Anchor the confirmation link to the env we're actually browsing,
+        // not whatever default Site URL is set in Supabase.
+        emailRedirectTo: `${window.location.origin}/login`,
       },
     });
     setLoading(false);
