@@ -148,20 +148,28 @@ function ProfileMenu() {
   const isLoggedIn = !loading && !!user;
   const displayName = profile?.full_name || user?.email?.split("@")[0] || "";
   const initials = getInitials(displayName);
+  const avatarUrl = profile?.avatar_url ?? null;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
           <button
-            className={`flex h-10 w-10 items-center justify-center rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ring-offset-2 ${
+            className={`relative flex h-10 w-10 items-center justify-center rounded-full overflow-hidden transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ring-offset-2 ${
               isLoggedIn
                 ? "bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-md shadow-brand-700/30 hover:from-brand-700 hover:to-brand-900"
                 : "bg-gradient-to-br from-brand-100 to-brand-200 text-brand-800 hover:from-brand-200 hover:to-brand-300"
             }`}
             aria-label="โปรไฟล์"
           >
-            {isLoggedIn ? (
+            {isLoggedIn && avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : isLoggedIn ? (
               <span className="text-sm font-semibold">{initials}</span>
             ) : (
               <User className="h-5 w-5" />
@@ -175,6 +183,7 @@ function ProfileMenu() {
             displayName={displayName}
             email={user.email ?? ""}
             initials={initials}
+            avatarUrl={avatarUrl}
             onLogout={handleLogout}
           />
         ) : (
@@ -189,19 +198,30 @@ function LoggedInMenu({
   displayName,
   email,
   initials,
+  avatarUrl,
   onLogout,
 }: {
   displayName: string;
   email: string;
   initials: string;
+  avatarUrl: string | null;
   onLogout: () => void;
 }) {
   return (
     <>
       <div className="px-2 py-3 mb-1 border-b border-slate-100">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-800 text-white font-semibold text-sm">
-            {initials}
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-full overflow-hidden bg-gradient-to-br from-brand-600 to-brand-800 text-white font-semibold text-sm">
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              initials
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold text-slate-900 truncate">

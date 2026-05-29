@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useUser, getInitials } from "@/lib/use-user";
+import { AvatarUploader } from "@/components/profile/AvatarUploader";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -140,29 +141,18 @@ export default function ProfilePage() {
             />
             <div className="absolute top-0 -right-20 h-72 w-72 rounded-full bg-brand-500/30 blur-3xl" />
 
-            <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-center gap-5">
-              <div className="flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-2xl sm:text-3xl font-bold shadow-lg">
-                {initials}
-              </div>
-              <div className="flex-1 text-center sm:text-left">
-                <div className="text-xs uppercase tracking-wider text-brand-100/80 mb-1">
-                  สมาชิก Warit Academy
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-bold mb-1">
-                  {displayName}
-                </h1>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-sm text-brand-100/90">
-                  <span className="flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5" />
-                    {user.email}
-                  </span>
-                  {emailVerified && (
-                    <span className="flex items-center gap-1 text-emerald-300">
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                      ยืนยันอีเมลแล้ว
-                    </span>
-                  )}
-                </div>
+            <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+              <div className="flex-1 w-full">
+                <AvatarUploader
+                  displayName={displayName}
+                  email={user.email ?? ""}
+                />
+                {emailVerified && (
+                  <div className="mt-2 flex items-center gap-1 text-xs text-emerald-300">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    ยืนยันอีเมลแล้ว
+                  </div>
+                )}
               </div>
               <Button
                 onClick={handleLogout}
