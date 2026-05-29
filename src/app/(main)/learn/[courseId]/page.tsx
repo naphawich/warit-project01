@@ -20,8 +20,8 @@ import {
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/use-user";
+import { useIsCourseOwned } from "@/lib/use-ownership";
 import { courses as catalog } from "@/lib/data";
 import {
   generateCurriculum,
@@ -29,16 +29,12 @@ import {
   type Lesson,
 } from "@/lib/lessons";
 
-type OwnershipState =
-  | { kind: "loading" }
-  | { kind: "not_owned" }
-  | { kind: "owned"; acquiredAt: string };
-
 export default function LearnPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const router = useRouter();
   const { user, loading: userLoading } = useUser();
   const numericId = Number(courseId);
+  const { owned, loading: ownershipLoading } = useIsCourseOwned(numericId);
   const course = useMemo(
     () => catalog.find((c) => c.id === numericId),
     [numericId]
@@ -53,7 +49,6 @@ export default function LearnPage() {
     [lessons]
   );
 
-  const [ownership, setOwnership] = useState<OwnershipState>({ kind: "loading" });
   const [activeLessonIdx, setActiveLessonIdx] = useState(0);
   const [completed, setCompleted] = useState<Record<string, true>>({});
 
@@ -63,29 +58,6 @@ export default function LearnPage() {
       router.replace(`/login?next=/learn/${courseId}`);
     }
   }, [userLoading, user, router, courseId]);
-
-  // Verify ownership in user_courses
-  useEffect(() => {
-    if (!user || !course) return;
-    let active = true;
-    (async () => {
-      const { data } = await supabase
-        .from("user_courses")
-        .select("acquired_at")
-        .eq("user_id", user.id)
-        .eq("course_id", course.id)
-        .maybeSingle();
-      if (!active) return;
-      if (!data) {
-        setOwnership({ kind: "not_owned" });
-      } else {
-        setOwnership({ kind: "owned", acquiredAt: data.acquired_at });
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [user, course]);
 
   // Load saved progress from localStorage
   useEffect(() => {
@@ -122,7 +94,7 @@ export default function LearnPage() {
     }
   }, [completed, activeLessonIdx, course, user]);
 
-  if (userLoading || !user || ownership.kind === "loading") {
+  if (userLoading || !user || ownershipLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 text-brand-600 animate-spin" />
@@ -139,10 +111,8 @@ export default function LearnPage() {
     );
   }
 
-  if (ownership.kind === "not_owned") {
-    return (
-      <NotOwnedState courseId={course.id} title={course.title} />
-    );
+  if (!owned) {
+    return <NotOwnedState courseId={course.id} title={course.title} />;
   }
 
   const activeLesson = lessons[activeLessonIdx] ?? lessons[0];

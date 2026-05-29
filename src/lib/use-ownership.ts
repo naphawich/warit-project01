@@ -2,19 +2,21 @@
 
 import { useAuth } from "./auth-context";
 
-// Returns the set of course IDs the current user owns, or null while loading.
+// Returns the set of owned course IDs, or null while the data tier is still
+// loading. Logged-out users get an empty set (not null).
 export function useOwnedCourseIds(): Set<number> | null {
-  const { ownedCourseIds, loading } = useAuth();
-  if (loading) return null;
+  const { ownedCourseIds, authLoading, entitlementsLoading, user } = useAuth();
+  if (authLoading) return null;
+  if (!user) return new Set();
+  if (entitlementsLoading) return null;
   return ownedCourseIds;
 }
 
-// Convenience for a single course
 export function useIsCourseOwned(courseId: number): {
   owned: boolean;
   loading: boolean;
 } {
-  const { ownedCourseIds, loading } = useAuth();
-  if (loading) return { owned: false, loading: true };
-  return { owned: ownedCourseIds.has(courseId), loading: false };
+  const ids = useOwnedCourseIds();
+  if (ids === null) return { owned: false, loading: true };
+  return { owned: ids.has(courseId), loading: false };
 }

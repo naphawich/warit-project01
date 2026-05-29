@@ -16,7 +16,12 @@ type AuthState = {
   user: User | null;
   profile: Profile | null;
   ownedCourseIds: Set<number>;
-  loading: boolean;
+  // True until the initial getSession() resolves (user identity is known).
+  // Once false, `user` is the source of truth (null = logged out).
+  authLoading: boolean;
+  // True while profile + entitlements are being fetched. Independent so
+  // navbar can render the logged-in state without waiting for the data tier.
+  entitlementsLoading: boolean;
   refresh: () => Promise<void>;
 };
 
@@ -26,7 +31,6 @@ async function fetchUserData(userId: string): Promise<{
   profile: Profile | null;
   ownedCourseIds: Set<number>;
 }> {
-  // Parallel fetch — one round-trip instead of two sequential calls
   const [profileResult, entitlementsResult] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", userId).single(),
     supabase.from("user_courses").select("course_id").eq("user_id", userId),
@@ -43,7 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [ownedCourseIds, setOwnedCourseIds] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [entitlementsLoading, setEntitlementsLoading] = useState(true);
 
   const userIdRef = useRef<string | null>(null);
 
@@ -53,19 +58,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
       setOwnedCourseIds(new Set());
       userIdRef.current = null;
-      setLoading(false);
+      setAuthLoading(false);
+      setEntitlementsLoading(false);
       return;
     }
-    setUser(nextUser);
+
+    const prevUserId = userIdRef.current;
     userIdRef.current = nextUser.id;
+    setUser(nextUser);
+    // Release the auth gate immediately so navbar / route guards stop showing
+    // the "logged out" UI while we go fetch profile + entitlements.
+    setAuthLoading(false);
+
+    // If we're still on the same user (e.g. token refresh), keep showing
+    // the cached profile/entitlements — no flicker.
+    if (prevUserId === nextUser.id) return;
+
+    setEntitlementsLoading(true);
     const { profile: p, ownedCourseIds: ids } = await fetchUserData(
       nextUser.id
     );
-    // Guard against race: only commit if user hasn't changed during fetch
+    // Guard against race: user may have changed during fetch
     if (userIdRef.current !== nextUser.id) return;
     setProfile(p);
     setOwnedCourseIds(ids);
-    setLoading(false);
+    setEntitlementsLoading(false);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -80,16 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    // Initial session check
-    (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!active) return;
-      await loadFor(session?.user ?? null);
-    })();
-
-    // Auth state changes (login/logout/token refresh)
+    // onAuthStateChange fires INITIAL_SESSION on subscribe, so it covers
+    // both the initial load and subsequent login/logout events.
     const { data: sub } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (!active) return;
@@ -103,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [loadFor]);
 
-  // Realtime: pick up new entitlements (e.g. after webhook grants a course)
+  // Realtime: pick up entitlements granted server-side (e.g. by the Omise webhook)
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -133,20 +142,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const value = useMemo<AuthState>(
-    () => ({ user, profile, ownedCourseIds, loading, refresh }),
-    [user, profile, ownedCourseIds, loading, refresh]
+    () => ({
+      user,
+      profile,
+      ownedCourseIds,
+      authLoading,
+      entitlementsLoading,
+      refresh,
+    }),
+    [user, profile, ownedCourseIds, authLoading, entitlementsLoading, refresh]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 // Fallback for components rendered outside provider (e.g. (auth) routes).
-// Returns the same shape with safe defaults so callers don't crash.
 const FALLBACK: AuthState = {
   user: null,
   profile: null,
   ownedCourseIds: new Set(),
-  loading: false,
+  authLoading: false,
+  entitlementsLoading: false,
   refresh: async () => {},
 };
 
