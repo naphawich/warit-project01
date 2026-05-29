@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["sin1"],
+  "functions": {
+    "src/app/api/checkout/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/webhooks/omise/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/qr/[orderId]/route.ts": {
+      "maxDuration": 15
+    }
+  }
+}
