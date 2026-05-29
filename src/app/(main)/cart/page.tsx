@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Trash2,
@@ -11,20 +12,74 @@ import {
   Tag,
   BookOpen,
   Sparkles,
+  Lock,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart-store";
+import { useUser } from "@/lib/use-user";
+import { supabase } from "@/lib/supabase";
 
 export default function CartPage() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const items = useCart((s) => s.items);
   const removeItem = useCart((s) => s.removeItem);
   const clear = useCart((s) => s.clear);
+  const { user, loading: userLoading } = useUser();
 
   useEffect(() => setMounted(true), []);
+
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const handleCheckout = async () => {
+    if (!user) {
+      router.push("/login?next=/cart");
+      return;
+    }
+    setCheckingOut(true);
+    setCheckoutError(null);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/login?next=/cart");
+        return;
+      }
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          items: items.map((i) => ({
+            id: i.id,
+            title: i.title,
+            price: i.price,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCheckoutError(data.message || data.error || "ไม่สามารถเริ่มการชำระเงินได้");
+        return;
+      }
+      router.push(`/checkout/${data.orderId}`);
+    } catch (e) {
+      setCheckoutError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+
+  const showLoginHint = mounted && !userLoading && !user;
 
   const subtotal = items.reduce((sum, i) => sum + i.originalPrice, 0);
   const total = items.reduce((sum, i) => sum + i.price, 0);
@@ -193,9 +248,38 @@ export default function CartPage() {
                     </Button>
                   </div>
 
-                  <Button className="w-full h-12 bg-brand-700 hover:bg-brand-800 text-white shadow-lg shadow-brand-700/25 text-base">
-                    ดำเนินการชำระเงิน
+                  <Button
+                    onClick={handleCheckout}
+                    disabled={userLoading || checkingOut}
+                    className="w-full h-12 bg-brand-700 hover:bg-brand-800 text-white shadow-lg shadow-brand-700/25 text-base disabled:opacity-70"
+                  >
+                    {checkingOut ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                        กำลังสร้าง QR...
+                      </>
+                    ) : showLoginHint ? (
+                      <>
+                        <Lock className="h-4 w-4 mr-1.5" />
+                        เข้าสู่ระบบเพื่อชำระเงิน
+                      </>
+                    ) : (
+                      "ดำเนินการชำระเงิน"
+                    )}
                   </Button>
+
+                  {showLoginHint && (
+                    <p className="text-center text-xs text-slate-500 mt-2">
+                      ต้องเข้าสู่ระบบก่อนชำระเงิน
+                    </p>
+                  )}
+
+                  {checkoutError && (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+                      <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                      <span>{checkoutError}</span>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-center gap-1.5 mt-4 text-xs text-slate-500">
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />

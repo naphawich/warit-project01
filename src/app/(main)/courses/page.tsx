@@ -13,6 +13,8 @@ import {
   ChevronRight,
   SlidersHorizontal,
   X,
+  Play,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +27,7 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { courses } from "@/lib/data";
+import { useOwnedCourseIds } from "@/lib/use-ownership";
 
 type SortKey = "popular" | "rating" | "price-asc" | "price-desc" | "newest";
 
@@ -41,6 +44,7 @@ export default function CoursesPage() {
   const [activeCategory, setActiveCategory] = useState<string>("ทั้งหมด");
   const [activeLevel, setActiveLevel] = useState<string>("ทั้งหมด");
   const [sort, setSort] = useState<SortKey>("popular");
+  const ownedIds = useOwnedCourseIds();
 
   const categories = useMemo(() => {
     const set = new Set(courses.map((c) => c.category));
@@ -274,90 +278,126 @@ export default function CoursesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((course, i) => (
-              <motion.div
-                key={course.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: Math.min(i, 6) * 0.04 }}
-                className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:shadow-brand-700/5 hover:border-brand-200 transition-all duration-300"
-              >
-                <Link
-                  href={`/courses/${course.id}`}
-                  className="block"
-                  aria-label={course.title}
+            {filtered.map((course, i) => {
+              const isOwned = ownedIds?.has(course.id) ?? false;
+              const linkHref = isOwned
+                ? `/learn/${course.id}`
+                : `/courses/${course.id}`;
+              return (
+                <motion.div
+                  key={course.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: Math.min(i, 6) * 0.04 }}
+                  className={`group bg-white rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-brand-700/5 ${
+                    isOwned
+                      ? "border-emerald-300 ring-1 ring-emerald-200"
+                      : "border-slate-200 hover:border-brand-200"
+                  }`}
                 >
-                  <div
-                    className={`aspect-video bg-gradient-to-br ${course.color} relative flex items-center justify-center overflow-hidden`}
+                  <Link
+                    href={linkHref}
+                    className="block"
+                    aria-label={course.title}
                   >
-                    <BookOpen
-                      className="h-20 w-20 text-white/30 group-hover:scale-110 transition-transform duration-500"
-                      strokeWidth={1.5}
-                    />
-                    <div className="absolute top-3 left-3">
-                      <Badge className="bg-white/20 text-white backdrop-blur-md border-0 hover:bg-white/30">
-                        {course.level}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="p-6 flex flex-col gap-4">
-                    <div>
-                      <div className="text-xs font-medium text-brand-700 mb-2">
-                        {course.category}
-                      </div>
-                      <h3 className="font-semibold text-slate-900 text-lg leading-snug line-clamp-2 min-h-[3.5rem] group-hover:text-brand-700 transition-colors">
-                        {course.title}
-                      </h3>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-sm text-slate-500">
-                      <div className="flex items-center gap-1.5">
-                        <BookOpen className="h-4 w-4" />
-                        <span>{course.lessons} บทเรียน</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4" />
-                        <span>{course.hours} ชม.</span>
+                    <div
+                      className={`aspect-video bg-gradient-to-br ${course.color} relative flex items-center justify-center overflow-hidden`}
+                    >
+                      <BookOpen
+                        className="h-20 w-20 text-white/30 group-hover:scale-110 transition-transform duration-500"
+                        strokeWidth={1.5}
+                      />
+                      <div className="absolute top-3 left-3 flex gap-2">
+                        <Badge className="bg-white/20 text-white backdrop-blur-md border-0 hover:bg-white/30">
+                          {course.level}
+                        </Badge>
+                        {isOwned && (
+                          <Badge className="bg-emerald-500 text-white border-0 hover:bg-emerald-500 shadow-md">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            ซื้อแล้ว
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm pt-3 border-t border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 text-amber-500">
-                          <Star className="h-4 w-4 fill-current" />
-                          <span className="font-semibold text-slate-700">
-                            {course.rating}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 text-slate-500">
-                          <Users className="h-4 w-4" />
-                          <span>{course.students.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-end justify-between pt-2">
+                    <div className="p-6 flex flex-col gap-4">
                       <div>
-                        <div className="text-xs text-slate-400 line-through">
-                          ฿{course.originalPrice.toLocaleString()}
+                        <div className="text-xs font-medium text-brand-700 mb-2">
+                          {course.category}
                         </div>
-                        <div className="text-xl font-bold text-brand-700">
-                          ฿{course.price.toLocaleString()}
+                        <h3 className="font-semibold text-slate-900 text-lg leading-snug line-clamp-2 min-h-[3.5rem] group-hover:text-brand-700 transition-colors">
+                          {course.title}
+                        </h3>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-sm text-slate-500">
+                        <div className="flex items-center gap-1.5">
+                          <BookOpen className="h-4 w-4" />
+                          <span>{course.lessons} บทเรียน</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-4 w-4" />
+                          <span>{course.hours} ชม.</span>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        className="bg-brand-700 hover:bg-brand-800 text-white group/btn pointer-events-none"
-                      >
-                        ดูคอร์ส
-                        <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
-                      </Button>
+
+                      <div className="flex items-center justify-between text-sm pt-3 border-t border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1 text-amber-500">
+                            <Star className="h-4 w-4 fill-current" />
+                            <span className="font-semibold text-slate-700">
+                              {course.rating}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-slate-500">
+                            <Users className="h-4 w-4" />
+                            <span>{course.students.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-end justify-between pt-2">
+                        {isOwned ? (
+                          <div className="text-sm font-semibold text-emerald-700 flex items-center gap-1.5">
+                            <CheckCircle2 className="h-4 w-4" />
+                            คุณเป็นเจ้าของแล้ว
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="text-xs text-slate-400 line-through">
+                              ฿{course.originalPrice.toLocaleString()}
+                            </div>
+                            <div className="text-xl font-bold text-brand-700">
+                              ฿{course.price.toLocaleString()}
+                            </div>
+                          </div>
+                        )}
+                        <Button
+                          size="sm"
+                          className={`group/btn pointer-events-none text-white ${
+                            isOwned
+                              ? "bg-emerald-600 hover:bg-emerald-700"
+                              : "bg-brand-700 hover:bg-brand-800"
+                          }`}
+                        >
+                          {isOwned ? (
+                            <>
+                              <Play className="h-3.5 w-3.5 mr-1" fill="currentColor" />
+                              เริ่มเรียน
+                            </>
+                          ) : (
+                            <>
+                              ดูคอร์ส
+                              <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
