@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import {
   Search,
@@ -26,8 +26,11 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
-import { courses } from "@/lib/data";
+import { courses as staticCatalog } from "@/lib/data";
+import type { Course } from "@/lib/data";
 import { useOwnedCourseIds } from "@/lib/use-ownership";
+import { mergeCourses, type DBCourseRow } from "@/lib/courses-db";
+import { supabase } from "@/lib/supabase";
 
 type SortKey = "popular" | "rating" | "price-asc" | "price-desc" | "newest";
 
@@ -46,15 +49,34 @@ export default function CoursesPage() {
   const [sort, setSort] = useState<SortKey>("popular");
   const ownedIds = useOwnedCourseIds();
 
+  // Start with the static catalog so the page paints something instantly;
+  // hydrate with DB rows once available.
+  const [courses, setCourses] = useState<Course[]>(staticCatalog);
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("is_published", true)
+        .order("id", { ascending: true });
+      if (!active) return;
+      setCourses(mergeCourses(staticCatalog, (data as DBCourseRow[]) ?? []));
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const categories = useMemo(() => {
     const set = new Set(courses.map((c) => c.category));
     return ["ทั้งหมด", ...Array.from(set)];
-  }, []);
+  }, [courses]);
 
   const levels = useMemo(() => {
     const set = new Set(courses.map((c) => c.level));
     return ["ทั้งหมด", ...Array.from(set)];
-  }, []);
+  }, [courses]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -83,7 +105,7 @@ export default function CoursesPage() {
         result = [...result].sort((a, b) => b.students - a.students);
     }
     return result;
-  }, [query, activeCategory, activeLevel, sort]);
+  }, [courses, query, activeCategory, activeLevel, sort]);
 
   const hasFilters =
     query !== "" || activeCategory !== "ทั้งหมด" || activeLevel !== "ทั้งหมด";
@@ -119,8 +141,8 @@ export default function CoursesPage() {
             ค้นพบคอร์สที่ใช่สำหรับคุณ
           </h1>
           <p className="text-slate-600 leading-relaxed">
-            เลือกจาก {courses.length} คอร์สคุณภาพสูง
-            ครอบคลุมหลากหลายหมวดหมู่ สอนโดยผู้เชี่ยวชาญตัวจริง
+            เลือกจาก {courses.length} คอร์สคุณภาพสูง ครอบคลุมหลากหลายหมวดหมู่
+            สอนโดยผู้เชี่ยวชาญตัวจริง
           </p>
         </div>
 

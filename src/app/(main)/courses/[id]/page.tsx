@@ -11,15 +11,45 @@ import {
   Share2,
   Award,
 } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { VideoPreview } from "@/components/course/VideoPreview";
 import { CourseActions } from "@/components/course/CourseActions";
-import { courses } from "@/lib/data";
+import { courses as staticCatalog } from "@/lib/data";
+import { dbRowToCourse, type DBCourseRow } from "@/lib/courses-db";
 
+// Static IDs are known at build; DB IDs (100+) render on demand.
 export function generateStaticParams() {
-  return courses.map((c) => ({ id: String(c.id) }));
+  return staticCatalog.map((c) => ({ id: String(c.id) }));
+}
+
+export const dynamicParams = true;
+
+async function loadCourse(id: string) {
+  // Static catalog first — no network needed for ids 1-9
+  const fromStatic = staticCatalog.find((c) => String(c.id) === id);
+  if (fromStatic) return fromStatic;
+
+  // Otherwise look it up in the DB
+  const numericId = Number(id);
+  if (!Number.isFinite(numericId)) return null;
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return null;
+  const supabase = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data } = await supabase
+    .from("courses")
+    .select("*")
+    .eq("id", numericId)
+    .eq("is_published", true)
+    .single();
+  if (!data) return null;
+  return dbRowToCourse(data as DBCourseRow);
 }
 
 export default async function CoursePage({
@@ -28,7 +58,7 @@ export default async function CoursePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const course = courses.find((c) => String(c.id) === id);
+  const course = await loadCourse(id);
   if (!course) notFound();
 
   const discount = Math.round(
