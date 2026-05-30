@@ -136,7 +136,12 @@ export default function NewCoursePage() {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.message || json.error || "บันทึกไม่สำเร็จ");
+        setError(
+          json.message ||
+            json.detail ||
+            json.error ||
+            "บันทึกไม่สำเร็จ"
+        );
         return;
       }
       // Jump straight to lesson manager so admin can start uploading
