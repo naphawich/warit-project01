@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { courses as catalog } from "@/lib/data";
+import type { Course } from "@/lib/data";
+import { loadCourseById } from "@/lib/courses-db";
 import {
   uploadFileMultipart,
   type UploadHandle,
@@ -64,10 +66,22 @@ function formatDuration(seconds: number | null | undefined): string {
 export default function AdminLessonsPage() {
   const { id } = useParams<{ id: string }>();
   const courseId = Number(id);
-  const course = useMemo(
-    () => catalog.find((c) => c.id === courseId),
-    [courseId]
+  // Static catalog hits resolve synchronously; DB courses come in after
+  // a Supabase round-trip. courseLookup === undefined means "still loading".
+  const [course, setCourse] = useState<Course | undefined | null>(() =>
+    catalog.find((c) => c.id === courseId)
   );
+  useEffect(() => {
+    if (course !== undefined) return;
+    let active = true;
+    (async () => {
+      const found = await loadCourseById(catalog, supabase, courseId);
+      if (active) setCourse(found);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [course, courseId]);
 
   const [lessons, setLessons] = useState<LessonRow[] | null>(null);
   const [seeding, setSeeding] = useState(false);
@@ -189,6 +203,14 @@ export default function AdminLessonsPage() {
       setDeleting((d) => ({ ...d, [lesson.id]: false }));
     }
   };
+
+  if (course === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 text-brand-600 animate-spin" />
+      </div>
+    );
+  }
 
   if (!course) {
     return (

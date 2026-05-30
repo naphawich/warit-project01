@@ -24,6 +24,8 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/use-user";
 import { useIsCourseOwned } from "@/lib/use-ownership";
 import { courses as catalog } from "@/lib/data";
+import type { Course } from "@/lib/data";
+import { loadCourseById } from "@/lib/courses-db";
 import {
   generateCurriculum,
   flattenLessons,
@@ -45,10 +47,21 @@ export default function LearnPage() {
   const { user, loading: userLoading } = useUser();
   const numericId = Number(courseId);
   const { owned, loading: ownershipLoading } = useIsCourseOwned(numericId);
-  const course = useMemo(
-    () => catalog.find((c) => c.id === numericId),
-    [numericId]
+  // undefined = still resolving; null = confirmed not found
+  const [course, setCourse] = useState<Course | undefined | null>(() =>
+    catalog.find((c) => c.id === numericId)
   );
+  useEffect(() => {
+    if (course !== undefined) return;
+    let active = true;
+    (async () => {
+      const found = await loadCourseById(catalog, supabase, numericId);
+      if (active) setCourse(found);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [course, numericId]);
 
   // Pull DB lesson rows so we can overlay R2 video info onto the generated
   // curriculum. If the course hasn't been seeded yet, dbLessons stays [].
@@ -196,7 +209,7 @@ export default function LearnPage() {
     }
   }, [completed, activeLessonIdx, course, user]);
 
-  if (userLoading || !user || ownershipLoading) {
+  if (userLoading || !user || ownershipLoading || course === undefined) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 text-brand-600 animate-spin" />
@@ -204,7 +217,7 @@ export default function LearnPage() {
     );
   }
 
-  if (!course) {
+  if (course === null) {
     return (
       <NotFoundState
         title="ไม่พบคอร์สนี้"

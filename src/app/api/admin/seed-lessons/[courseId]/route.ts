@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { authenticateAdmin } from "@/lib/admin-server";
 import { courses as catalog } from "@/lib/data";
+import { dbRowToCourse, type DBCourseRow } from "@/lib/courses-db";
 import { generateCurriculum, flattenLessons } from "@/lib/lessons";
 
 export const runtime = "nodejs";
@@ -22,7 +23,18 @@ export async function POST(
 
   const { courseId } = await params;
   const numericId = Number(courseId);
-  const course = catalog.find((c) => c.id === numericId);
+
+  // Static catalog hits first; fall back to public.courses for DB-created
+  // courses (ids 100+).
+  let course = catalog.find((c) => c.id === numericId);
+  if (!course) {
+    const { data } = await admin
+      .from("courses")
+      .select("*")
+      .eq("id", numericId)
+      .maybeSingle();
+    if (data) course = dbRowToCourse(data as DBCourseRow);
+  }
   if (!course) {
     return NextResponse.json({ error: "course_not_found" }, { status: 404 });
   }

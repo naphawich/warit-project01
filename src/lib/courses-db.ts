@@ -64,6 +64,25 @@ export function mergeCourses(
   return [...staticCourses, ...fromDb];
 }
 
+// Load a single course by id, checking the static catalog first (no network)
+// then falling back to a Supabase fetch. Caller passes the Supabase client
+// so this file stays decoupled from the singleton.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function loadCourseById(
+  staticCourses: Course[],
+  supabase: any,
+  id: number
+): Promise<Course | null> {
+  const fromStatic = staticCourses.find((c) => c.id === id);
+  if (fromStatic) return fromStatic;
+  const { data } = await supabase
+    .from("courses")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  return data ? dbRowToCourse(data as DBCourseRow) : null;
+}
+
 export type NewCourseInput = {
   title: string;
   short_description: string;
