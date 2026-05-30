@@ -34,17 +34,27 @@ export async function GET(
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    // Owner check (uses service role so RLS doesn't get in the way; we
-    // already validated identity via the bearer token)
-    const { data: entitlement } = await admin
-      .from("user_courses")
-      .select("course_id")
-      .eq("user_id", authed.user.id)
-      .eq("course_id", lesson.course_id)
+    // Admins can stream any video so they can verify uploads without
+    // having to buy their own course.
+    const { data: adminCheck } = await admin
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", authed.user.id)
       .maybeSingle();
 
-    if (!entitlement) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    if (!adminCheck?.is_admin) {
+      // Owner check (uses service role so RLS doesn't get in the way; we
+      // already validated identity via the bearer token)
+      const { data: entitlement } = await admin
+        .from("user_courses")
+        .select("course_id")
+        .eq("user_id", authed.user.id)
+        .eq("course_id", lesson.course_id)
+        .maybeSingle();
+
+      if (!entitlement) {
+        return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      }
     }
   }
 

@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/use-user";
+import { useAuth } from "@/lib/auth-context";
 import { useIsCourseOwned } from "@/lib/use-ownership";
 import { courses as catalog } from "@/lib/data";
 import type { Course } from "@/lib/data";
@@ -46,7 +47,12 @@ export default function LearnPage() {
   const router = useRouter();
   const { user, loading: userLoading } = useUser();
   const numericId = Number(courseId);
-  const { owned, loading: ownershipLoading } = useIsCourseOwned(numericId);
+  const { owned: ownedReal, loading: ownershipLoading } =
+    useIsCourseOwned(numericId);
+  const { profile } = useAuth();
+  // Admins can preview any course without buying — they're the ones who
+  // uploaded the videos in the first place.
+  const owned = ownedReal || !!profile?.is_admin;
   // undefined = still resolving; null = confirmed not found
   const [course, setCourse] = useState<Course | undefined | null>(() =>
     catalog.find((c) => c.id === numericId)
