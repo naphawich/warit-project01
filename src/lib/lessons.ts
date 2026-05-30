@@ -8,7 +8,17 @@ export type Lesson = {
   durationMinutes: number;
   // When set, the lesson plays this real video instead of the placeholder mockup.
   video?: PreviewVideo;
+  // Populated when this lesson maps to a public.lessons row in the DB.
+  dbId?: string;
+  // True if the matching DB row has video_storage_key set (uploaded to R2).
+  hasR2Video?: boolean;
 };
+
+export function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
 
 export type Chapter = {
   id: string;

@@ -20,14 +20,24 @@ import {
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/use-user";
 import { useIsCourseOwned } from "@/lib/use-ownership";
 import { courses as catalog } from "@/lib/data";
 import {
   generateCurriculum,
   flattenLessons,
+  formatDuration,
   type Lesson,
 } from "@/lib/lessons";
+
+type DBLesson = {
+  id: string;
+  global_index: number;
+  title: string | null;
+  duration_seconds: number | null;
+  video_storage_key: string | null;
+};
 
 export default function LearnPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -39,10 +49,56 @@ export default function LearnPage() {
     () => catalog.find((c) => c.id === numericId),
     [numericId]
   );
-  const chapters = useMemo(
-    () => (course ? generateCurriculum(course) : []),
-    [course]
-  );
+
+  // Pull DB lesson rows so we can overlay R2 video info onto the generated
+  // curriculum. If the course hasn't been seeded yet, dbLessons stays [].
+  const [dbLessons, setDbLessons] = useState<DBLesson[]>([]);
+  useEffect(() => {
+    if (!course) return;
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("lessons")
+        .select("id, global_index, title, duration_seconds, video_storage_key")
+        .eq("course_id", course.id)
+        .order("global_index", { ascending: true });
+      if (!active) return;
+      setDbLessons((data as DBLesson[]) ?? []);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [course]);
+
+  const chapters = useMemo(() => {
+    if (!course) return [];
+    const generated = generateCurriculum(course);
+    if (dbLessons.length === 0) return generated;
+    const byIdx = new Map(dbLessons.map((l) => [l.global_index, l]));
+    return generated.map((chapter) => ({
+      ...chapter,
+      lessons: chapter.lessons.map((lesson) => {
+        const db = byIdx.get(lesson.index);
+        if (!db) return lesson;
+        const durationSeconds = db.duration_seconds ?? null;
+        return {
+          ...lesson,
+          title: db.title ?? lesson.title,
+          duration:
+            durationSeconds != null
+              ? formatDuration(durationSeconds)
+              : lesson.duration,
+          durationMinutes:
+            durationSeconds != null
+              ? durationSeconds / 60
+              : lesson.durationMinutes,
+          dbId: db.id,
+          hasR2Video: !!db.video_storage_key,
+        } satisfies Lesson;
+      }),
+    }));
+  }, [course, dbLessons]);
+
   const lessons = useMemo(() => flattenLessons(chapters), [chapters]);
   const totalMinutes = useMemo(
     () => Math.round(lessons.reduce((s, l) => s + l.durationMinutes, 0)),
@@ -51,6 +107,52 @@ export default function LearnPage() {
 
   const [activeLessonIdx, setActiveLessonIdx] = useState(0);
   const [completed, setCompleted] = useState<Record<string, true>>({});
+
+  // R2 signed URL for the active lesson — refetched whenever the active
+  // lesson changes (and refreshed before the 1-hour URL expires).
+  const [r2VideoUrl, setR2VideoUrl] = useState<string | null>(null);
+  const [r2VideoError, setR2VideoError] = useState<string | null>(null);
+  const activeLessonForFetch = lessons[activeLessonIdx];
+  useEffect(() => {
+    setR2VideoUrl(null);
+    setR2VideoError(null);
+    if (
+      !user ||
+      !activeLessonForFetch?.dbId ||
+      !activeLessonForFetch.hasR2Video
+    ) {
+      return;
+    }
+    let active = true;
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session || !active) return;
+      try {
+        const res = await fetch(
+          `/api/lesson-video/${activeLessonForFetch.dbId}`,
+          {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            cache: "no-store",
+          }
+        );
+        if (!active) return;
+        if (!res.ok) {
+          setR2VideoError("ไม่สามารถโหลดวิดีโอ");
+          return;
+        }
+        const json = (await res.json()) as { url: string };
+        if (!active) return;
+        setR2VideoUrl(json.url);
+      } catch {
+        if (active) setR2VideoError("เครือข่ายมีปัญหา");
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user, activeLessonForFetch?.dbId, activeLessonForFetch?.hasR2Video]);
 
   // Redirect logged-out users to login
   useEffect(() => {
@@ -171,8 +273,28 @@ export default function LearnPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Video player — real iframe when the lesson has one, mockup otherwise */}
-              {activeLesson.video?.type === "youtube" ? (
+              {/* Video player: R2 (uploaded) → YouTube preview → gradient mockup */}
+              {activeLesson.hasR2Video && r2VideoUrl ? (
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl shadow-slate-900/15">
+                  <video
+                    key={activeLesson.id}
+                    src={r2VideoUrl}
+                    controls
+                    controlsList="nodownload"
+                    playsInline
+                    className="absolute inset-0 w-full h-full"
+                  />
+                </div>
+              ) : activeLesson.hasR2Video && !r2VideoError ? (
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl shadow-slate-900/15 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 text-white animate-spin" />
+                </div>
+              ) : activeLesson.hasR2Video && r2VideoError ? (
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl shadow-slate-900/15 flex flex-col items-center justify-center text-white gap-2">
+                  <span className="text-sm">{r2VideoError}</span>
+                  <span className="text-xs text-white/60">รีเฟรชหน้าเพื่อลองใหม่</span>
+                </div>
+              ) : activeLesson.video?.type === "youtube" ? (
                 <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl shadow-slate-900/15">
                   <iframe
                     key={activeLesson.id}
