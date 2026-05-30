@@ -282,6 +282,9 @@ export default function LearnPage() {
                     controls
                     controlsList="nodownload"
                     playsInline
+                    // Only fetch the moov/header, not the body, until play.
+                    // Cuts cold-load from full file → ~1 MB for typical MP4.
+                    preload="metadata"
                     className="absolute inset-0 w-full h-full"
                   />
                 </div>

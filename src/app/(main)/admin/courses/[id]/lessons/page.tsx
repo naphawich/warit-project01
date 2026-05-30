@@ -12,6 +12,7 @@ import {
   Sparkles,
   AlertCircle,
   X,
+  Trash2,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,7 @@ export default function AdminLessonsPage() {
   const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploads, setUploads] = useState<Record<string, LessonUploadState>>({});
+  const [deleting, setDeleting] = useState<Record<string, boolean>>({});
 
   const fetchLessons = useCallback(async () => {
     const { data, error } = await supabase
@@ -157,6 +159,35 @@ export default function AdminLessonsPage() {
       u[lessonId]?.handle?.cancel();
       return { ...u, [lessonId]: { phase: "idle" } };
     });
+  };
+
+  const deleteVideo = async (lesson: LessonRow) => {
+    if (
+      !window.confirm(
+        `ลบวิดีโอของบทเรียน "${lesson.title}" ใช่หรือไม่?\nไฟล์จะถูกลบจาก R2 และไม่สามารถกู้คืนได้`
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    setDeleting((d) => ({ ...d, [lesson.id]: true }));
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("ไม่มี session");
+      const res = await fetch(`/api/admin/lesson-video/${lesson.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "delete failed");
+      await fetchLessons();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ลบไม่สำเร็จ");
+    } finally {
+      setDeleting((d) => ({ ...d, [lesson.id]: false }));
+    }
   };
 
   if (!course) {
@@ -316,7 +347,7 @@ export default function AdminLessonsPage() {
                       )}
                     </div>
 
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 flex gap-2">
                       {state?.phase === "uploading" ? (
                         <Button
                           variant="outline"
@@ -326,19 +357,29 @@ export default function AdminLessonsPage() {
                           <X className="h-4 w-4 mr-1.5" />
                           ยกเลิก
                         </Button>
-                      ) : hasVideo ? (
-                        <UploadButton
-                          lesson={lesson}
-                          label="แทนที่"
-                          onPick={startUpload}
-                        />
                       ) : (
-                        <UploadButton
-                          lesson={lesson}
-                          label="อัปโหลด"
-                          onPick={startUpload}
-                          primary
-                        />
+                        <>
+                          {hasVideo && (
+                            <Button
+                              variant="outline"
+                              onClick={() => deleteVideo(lesson)}
+                              disabled={deleting[lesson.id]}
+                              className="border-red-200 text-red-700 hover:bg-red-50"
+                            >
+                              {deleting[lesson.id] ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                          <UploadButton
+                            lesson={lesson}
+                            label={hasVideo ? "แทนที่" : "อัปโหลด"}
+                            onPick={startUpload}
+                            primary={!hasVideo}
+                          />
+                        </>
                       )}
                     </div>
                   </div>

@@ -9,6 +9,7 @@ import {
   UploadPartCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  DeleteObjectCommand,
   type CompletedPart,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -46,10 +47,19 @@ export async function startMultipartUpload(
       Bucket: R2_BUCKET,
       Key: key,
       ContentType: contentType,
+      // 24 h client cache — same signed URL within session reuses bytes;
+      // Cloudflare CDN can also honor it on signed-URL hits.
+      CacheControl: "public, max-age=86400",
     })
   );
   if (!resp.UploadId) throw new Error("R2 returned no UploadId");
   return resp.UploadId;
+}
+
+export async function deleteObject(key: string): Promise<void> {
+  await r2.send(
+    new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key })
+  );
 }
 
 // Pre-signed PUT URLs so the browser can upload chunks directly to R2.
