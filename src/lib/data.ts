@@ -67,11 +67,6 @@ export const courses: Course[] = [
       "เข้าถึงได้ทุกอุปกรณ์",
       "กลุ่มผู้เรียนสำหรับถาม-ตอบ",
     ],
-    previewVideo: {
-      type: "youtube",
-      id: "wIuVvCuiJhU",
-      durationLabel: "1:38 นาที",
-    },
   },
   {
     id: 2,
