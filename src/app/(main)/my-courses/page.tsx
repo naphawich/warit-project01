@@ -18,6 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/use-user";
 import { courses as catalog } from "@/lib/data";
+import type { Course } from "@/lib/data";
+import { dbRowToCourse, type DBCourseRow } from "@/lib/courses-db";
 
 type Entitlement = {
   course_id: number;
@@ -29,6 +31,7 @@ export default function MyCoursesPage() {
   const router = useRouter();
   const { user, loading: userLoading } = useUser();
   const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
+  const [dbCourses, setDbCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,12 +42,20 @@ export default function MyCoursesPage() {
     if (!user) return;
     let active = true;
     (async () => {
-      const { data } = await supabase
-        .from("user_courses")
-        .select("course_id, acquired_at, order_id")
-        .order("acquired_at", { ascending: false });
+      // Pull entitlements + any DB-only courses in parallel — a single
+      // round-trip per query, no waterfall.
+      const [entRes, courseRes] = await Promise.all([
+        supabase
+          .from("user_courses")
+          .select("course_id, acquired_at, order_id")
+          .order("acquired_at", { ascending: false }),
+        supabase.from("courses").select("*"),
+      ]);
       if (!active) return;
-      setEntitlements((data as Entitlement[]) ?? []);
+      setEntitlements((entRes.data as Entitlement[]) ?? []);
+      setDbCourses(
+        ((courseRes.data as DBCourseRow[]) ?? []).map(dbRowToCourse)
+      );
       setLoading(false);
     })();
     return () => {
@@ -60,9 +71,15 @@ export default function MyCoursesPage() {
     );
   }
 
+  // Static catalog wins on id collision (1-9 ship with the app); DB courses
+  // (100+) cover anything an admin created later.
+  const courseById = new Map<number, Course>();
+  for (const c of dbCourses) courseById.set(c.id, c);
+  for (const c of catalog) courseById.set(c.id, c);
+
   const myCourses = entitlements
     .map((e) => {
-      const c = catalog.find((c) => c.id === e.course_id);
+      const c = courseById.get(e.course_id);
       return c ? { ...c, acquired_at: e.acquired_at } : null;
     })
     .filter((c): c is NonNullable<typeof c> => c !== null);
