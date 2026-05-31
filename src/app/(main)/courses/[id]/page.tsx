@@ -52,6 +52,29 @@ async function loadCourse(id: string) {
   return dbRowToCourse(data as DBCourseRow);
 }
 
+// First lesson the admin flagged as a preview clip (with an uploaded video).
+async function loadPreviewLesson(
+  courseId: number
+): Promise<{ id: string; duration_seconds: number | null } | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return null;
+  const supabase = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data } = await supabase
+    .from("lessons")
+    .select("id, duration_seconds, video_storage_key, is_preview")
+    .eq("course_id", courseId)
+    .eq("is_preview", true)
+    .not("video_storage_key", "is", null)
+    .order("global_index", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  return { id: data.id as string, duration_seconds: data.duration_seconds };
+}
+
 export default async function CoursePage({
   params,
 }: {
@@ -60,6 +83,8 @@ export default async function CoursePage({
   const { id } = await params;
   const course = await loadCourse(id);
   if (!course) notFound();
+
+  const previewLesson = await loadPreviewLesson(course.id);
 
   const discount = Math.round(
     ((course.originalPrice - course.price) / course.originalPrice) * 100
@@ -146,6 +171,8 @@ export default async function CoursePage({
                 color={course.color}
                 title={course.title}
                 preview={course.previewVideo}
+                previewLessonId={previewLesson?.id}
+                previewDurationSeconds={previewLesson?.duration_seconds}
               />
             </div>
 
@@ -212,6 +239,8 @@ export default async function CoursePage({
                 color={course.color}
                 title={course.title}
                 preview={course.previewVideo}
+                previewLessonId={previewLesson?.id}
+                previewDurationSeconds={previewLesson?.duration_seconds}
               />
               </div>
 

@@ -36,10 +36,19 @@ import {
 
 type DBLesson = {
   id: string;
+  chapter_index: number;
+  lesson_index: number;
   global_index: number;
   title: string | null;
+  description: string | null;
   duration_seconds: number | null;
   video_storage_key: string | null;
+};
+
+type DBChapter = {
+  id: string;
+  chapter_index: number;
+  title: string;
 };
 
 export default function LearnPage() {
@@ -72,17 +81,28 @@ export default function LearnPage() {
   // Pull DB lesson rows so we can overlay R2 video info onto the generated
   // curriculum. If the course hasn't been seeded yet, dbLessons stays [].
   const [dbLessons, setDbLessons] = useState<DBLesson[]>([]);
+  const [dbChapters, setDbChapters] = useState<DBChapter[]>([]);
   useEffect(() => {
     if (!course) return;
     let active = true;
     (async () => {
-      const { data } = await supabase
-        .from("lessons")
-        .select("id, global_index, title, duration_seconds, video_storage_key")
-        .eq("course_id", course.id)
-        .order("global_index", { ascending: true });
+      const [lsRes, chRes] = await Promise.all([
+        supabase
+          .from("lessons")
+          .select(
+            "id, chapter_index, lesson_index, global_index, title, description, duration_seconds, video_storage_key"
+          )
+          .eq("course_id", course.id)
+          .order("global_index", { ascending: true }),
+        supabase
+          .from("chapters")
+          .select("id, chapter_index, title")
+          .eq("course_id", course.id)
+          .order("chapter_index", { ascending: true }),
+      ]);
       if (!active) return;
-      setDbLessons((data as DBLesson[]) ?? []);
+      setDbLessons((lsRes.data as DBLesson[]) ?? []);
+      setDbChapters((chRes.data as DBChapter[]) ?? []);
     })();
     return () => {
       active = false;
@@ -91,32 +111,52 @@ export default function LearnPage() {
 
   const chapters = useMemo(() => {
     if (!course) return [];
-    const generated = generateCurriculum(course);
-    if (dbLessons.length === 0) return generated;
-    const byIdx = new Map(dbLessons.map((l) => [l.global_index, l]));
-    return generated.map((chapter) => ({
-      ...chapter,
-      lessons: chapter.lessons.map((lesson) => {
-        const db = byIdx.get(lesson.index);
-        if (!db) return lesson;
-        const durationSeconds = db.duration_seconds ?? null;
+
+    // When the course has been authored in the DB (admin added chapters +
+    // lessons), the DB is the source of truth — build the curriculum straight
+    // from it so added/removed chapters and lessons show up exactly.
+    if (dbChapters.length > 0 || dbLessons.length > 0) {
+      const chapterMeta = new Map(
+        dbChapters.map((c) => [c.chapter_index, c.title])
+      );
+      // Discover chapter indices from both tables in case one is sparse.
+      const indices = Array.from(
+        new Set([
+          ...dbChapters.map((c) => c.chapter_index),
+          ...dbLessons.map((l) => l.chapter_index),
+        ])
+      ).sort((a, b) => a - b);
+
+      return indices.map((ci, order) => {
+        const chapterLessons = dbLessons
+          .filter((l) => l.chapter_index === ci)
+          .sort((a, b) => a.lesson_index - b.lesson_index)
+          .map((db) => {
+            const seconds = db.duration_seconds ?? null;
+            return {
+              id: db.id,
+              index: db.global_index,
+              title: db.title ?? "บทเรียน",
+              duration: seconds != null ? formatDuration(seconds) : "—",
+              durationMinutes: seconds != null ? seconds / 60 : 0,
+              dbId: db.id,
+              hasR2Video: !!db.video_storage_key,
+              description: db.description,
+            } satisfies Lesson;
+          });
         return {
-          ...lesson,
-          title: db.title ?? lesson.title,
-          duration:
-            durationSeconds != null
-              ? formatDuration(durationSeconds)
-              : lesson.duration,
-          durationMinutes:
-            durationSeconds != null
-              ? durationSeconds / 60
-              : lesson.durationMinutes,
-          dbId: db.id,
-          hasR2Video: !!db.video_storage_key,
-        } satisfies Lesson;
-      }),
-    }));
-  }, [course, dbLessons]);
+          id: `ch-${ci}`,
+          index: order + 1,
+          title: chapterMeta.get(ci) ?? `บทที่ ${ci + 1}`,
+          lessons: chapterLessons,
+        };
+      });
+    }
+
+    // No DB rows yet — fall back to the generated curriculum (static courses
+    // that were never seeded).
+    return generateCurriculum(course);
+  }, [course, dbLessons, dbChapters]);
 
   const lessons = useMemo(() => flattenLessons(chapters), [chapters]);
   const totalMinutes = useMemo(
@@ -396,13 +436,19 @@ export default function LearnPage() {
                   </Button>
                 </div>
 
-                <p className="text-slate-600 leading-relaxed">
-                  เนื้อหาบทเรียนนี้จะพาคุณเข้าใจ{" "}
-                  <span className="text-slate-900 font-medium">
-                    {activeLesson.title}
-                  </span>{" "}
-                  ผ่านวิดีโอบรรยาย ตัวอย่างจริง และแบบฝึกหัดทบทวน
-                  คุณสามารถดูซ้ำได้ไม่จำกัด
+                <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+                  {activeLesson.description ? (
+                    activeLesson.description
+                  ) : (
+                    <>
+                      เนื้อหาบทเรียนนี้จะพาคุณเข้าใจ{" "}
+                      <span className="text-slate-900 font-medium">
+                        {activeLesson.title}
+                      </span>{" "}
+                      ผ่านวิดีโอบรรยาย ตัวอย่างจริง และแบบฝึกหัดทบทวน
+                      คุณสามารถดูซ้ำได้ไม่จำกัด
+                    </>
+                  )}
                 </p>
               </div>
 

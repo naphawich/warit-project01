@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Play, X, BookOpen } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Play, X, BookOpen, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import type { PreviewVideo } from "@/lib/data";
 
@@ -9,11 +9,57 @@ type Props = {
   color: string;
   title: string;
   preview?: PreviewVideo;
+  // When the admin marked a lesson as the preview clip, its R2 video plays
+  // instead of the static youtube/gradient placeholder.
+  previewLessonId?: string;
+  previewDurationSeconds?: number | null;
 };
 
-export function VideoPreview({ color, title, preview }: Props) {
+function durationFromSeconds(seconds?: number | null): string | null {
+  if (!seconds || seconds <= 0) return null;
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")} นาที`;
+}
+
+export function VideoPreview({
+  color,
+  title,
+  preview,
+  previewLessonId,
+  previewDurationSeconds,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [thumbFallback, setThumbFallback] = useState(false);
+
+  // Fetch the signed R2 URL for an admin-uploaded preview clip on first open.
+  const [r2Url, setR2Url] = useState<string | null>(null);
+  const [r2Loading, setR2Loading] = useState(false);
+  const [r2Error, setR2Error] = useState(false);
+  useEffect(() => {
+    if (!open || !previewLessonId || r2Url || r2Loading) return;
+    let active = true;
+    setR2Loading(true);
+    setR2Error(false);
+    (async () => {
+      try {
+        const res = await fetch(`/api/lesson-video/${previewLessonId}`, {
+          cache: "no-store",
+        });
+        const json = (await res.json()) as { url?: string };
+        if (!active) return;
+        if (!res.ok || !json.url) setR2Error(true);
+        else setR2Url(json.url);
+      } catch {
+        if (active) setR2Error(true);
+      } finally {
+        if (active) setR2Loading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [open, previewLessonId, r2Url, r2Loading]);
 
   const youtubeThumb =
     preview?.type === "youtube"
@@ -22,7 +68,10 @@ export function VideoPreview({ color, title, preview }: Props) {
         : `https://img.youtube.com/vi/${preview.id}/maxresdefault.jpg`
       : null;
 
-  const durationLabel = preview?.durationLabel ?? "2:14 นาที";
+  const durationLabel =
+    durationFromSeconds(previewDurationSeconds) ??
+    preview?.durationLabel ??
+    "2:14 นาที";
 
   return (
     <>
@@ -101,7 +150,28 @@ export function VideoPreview({ color, title, preview }: Props) {
                 <X className="h-5 w-5" />
               </button>
 
-              {preview?.type === "youtube" ? (
+              {previewLessonId ? (
+                r2Url ? (
+                  <video
+                    src={r2Url}
+                    controls
+                    autoPlay
+                    playsInline
+                    controlsList="nodownload"
+                    className="absolute inset-0 w-full h-full bg-black"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-3">
+                    {r2Error ? (
+                      <span className="text-sm text-white/70">
+                        ไม่สามารถโหลดวิดีโอตัวอย่าง
+                      </span>
+                    ) : (
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    )}
+                  </div>
+                )
+              ) : preview?.type === "youtube" ? (
                 <iframe
                   src={`https://www.youtube.com/embed/${preview.id}?autoplay=1&rel=0&modestbranding=1`}
                   title={title}

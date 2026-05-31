@@ -63,14 +63,19 @@ export async function POST(req: Request) {
 
   // Confirm with R2 + record the result
   const head = await headObject(body.key);
+  const update: Record<string, unknown> = {
+    video_storage_key: body.key,
+    video_size_bytes: head?.size ?? null,
+    video_uploaded_at: new Date().toISOString(),
+  };
+  // Only overwrite duration when we actually read one from the clip, so a
+  // failed metadata read doesn't wipe a previously known runtime.
+  if (typeof body.durationSeconds === "number" && body.durationSeconds > 0) {
+    update.duration_seconds = Math.round(body.durationSeconds);
+  }
   const { error: updateErr } = await admin
     .from("lessons")
-    .update({
-      video_storage_key: body.key,
-      video_size_bytes: head?.size ?? null,
-      video_uploaded_at: new Date().toISOString(),
-      duration_seconds: body.durationSeconds ?? null,
-    })
+    .update(update)
     .eq("id", body.lessonId);
 
   if (updateErr) {

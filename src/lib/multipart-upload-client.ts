@@ -22,6 +22,29 @@ type Options = {
   concurrency?: number;
 };
 
+// Read the real playback duration (seconds) from a video File using a hidden
+// <video> element. Resolves null if the browser can't decode the metadata so
+// the upload still proceeds — duration just stays unknown.
+export function readVideoDuration(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    if (typeof document === "undefined") return resolve(null);
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    const url = URL.createObjectURL(file);
+    const cleanup = () => URL.revokeObjectURL(url);
+    video.onloadedmetadata = () => {
+      const d = video.duration;
+      cleanup();
+      resolve(Number.isFinite(d) && d > 0 ? d : null);
+    };
+    video.onerror = () => {
+      cleanup();
+      resolve(null);
+    };
+    video.src = url;
+  });
+}
+
 async function putPart(
   url: string,
   body: Blob,
@@ -94,6 +117,10 @@ export function uploadFileMultipart(opts: Options): UploadHandle {
   const controller = new AbortController();
 
   const promise = (async () => {
+    // 0. Capture the real clip duration before uploading so the lesson shows
+    //    the exact runtime of the video that was used.
+    const durationSeconds = await readVideoDuration(opts.file);
+
     // 1. INIT — server creates the multipart upload + pre-signs every part
     const initRes = await fetch("/api/admin/upload/init", {
       method: "POST",
@@ -184,6 +211,7 @@ export function uploadFileMultipart(opts: Options): UploadHandle {
         key,
         uploadId,
         parts,
+        durationSeconds,
       }),
     });
     if (!completeRes.ok) {

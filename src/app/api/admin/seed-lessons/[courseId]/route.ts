@@ -42,6 +42,23 @@ export async function POST(
   const chapters = generateCurriculum(course);
   const lessons = flattenLessons(chapters);
 
+  // Seed chapter rows (editable titles) alongside the lessons.
+  const chapterRows = chapters.map((ch, c) => ({
+    course_id: course!.id,
+    chapter_index: c,
+    title: ch.title,
+  }));
+  const { error: chapterErr } = await admin
+    .from("chapters")
+    .upsert(chapterRows, { onConflict: "course_id,chapter_index" });
+  if (chapterErr) {
+    console.error("[seed-lessons] chapter upsert failed", chapterErr);
+    return NextResponse.json(
+      { error: "db_error", detail: chapterErr.message },
+      { status: 500 }
+    );
+  }
+
   // Build rows referencing chapter/lesson positions
   const rows: Array<{
     course_id: number;

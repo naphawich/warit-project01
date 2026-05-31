@@ -12,6 +12,8 @@ export type Lesson = {
   dbId?: string;
   // True if the matching DB row has video_storage_key set (uploaded to R2).
   hasR2Video?: boolean;
+  // Optional admin-authored description shown on the learn page.
+  description?: string | null;
 };
 
 export function formatDuration(seconds: number): string {
