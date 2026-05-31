@@ -52,17 +52,34 @@ async function loadCourse(id: string) {
   return dbRowToCourse(data as DBCourseRow);
 }
 
-// First lesson the admin flagged as a preview clip (with an uploaded video).
-async function loadPreviewLesson(
+// Resolve the course's preview clip. Prefer the dedicated course-level preview
+// (course_previews); fall back to a lesson flagged is_preview for backward
+// compatibility. Returns the API endpoint to fetch the signed URL from.
+async function loadPreviewSource(
   courseId: number
-): Promise<{ id: string; duration_seconds: number | null } | null> {
+): Promise<{ endpoint: string; duration_seconds: number | null } | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return null;
   const supabase = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data } = await supabase
+
+  // 1. Dedicated course-level preview clip.
+  const { data: cp } = await supabase
+    .from("course_previews")
+    .select("duration_seconds, video_storage_key")
+    .eq("course_id", courseId)
+    .maybeSingle();
+  if (cp?.video_storage_key) {
+    return {
+      endpoint: `/api/course-preview/${courseId}`,
+      duration_seconds: cp.duration_seconds,
+    };
+  }
+
+  // 2. Fallback: a lesson marked is_preview with an uploaded video.
+  const { data: lesson } = await supabase
     .from("lessons")
     .select("id, duration_seconds, video_storage_key, is_preview")
     .eq("course_id", courseId)
@@ -71,8 +88,13 @@ async function loadPreviewLesson(
     .order("global_index", { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (!data) return null;
-  return { id: data.id as string, duration_seconds: data.duration_seconds };
+  if (lesson) {
+    return {
+      endpoint: `/api/lesson-video/${lesson.id}`,
+      duration_seconds: lesson.duration_seconds,
+    };
+  }
+  return null;
 }
 
 export default async function CoursePage({
@@ -84,7 +106,7 @@ export default async function CoursePage({
   const course = await loadCourse(id);
   if (!course) notFound();
 
-  const previewLesson = await loadPreviewLesson(course.id);
+  const previewSource = await loadPreviewSource(course.id);
 
   const discount = Math.round(
     ((course.originalPrice - course.price) / course.originalPrice) * 100
@@ -171,8 +193,8 @@ export default async function CoursePage({
                 color={course.color}
                 title={course.title}
                 preview={course.previewVideo}
-                previewLessonId={previewLesson?.id}
-                previewDurationSeconds={previewLesson?.duration_seconds}
+                previewVideoEndpoint={previewSource?.endpoint}
+                previewDurationSeconds={previewSource?.duration_seconds}
               />
             </div>
 
@@ -239,8 +261,8 @@ export default async function CoursePage({
                 color={course.color}
                 title={course.title}
                 preview={course.previewVideo}
-                previewLessonId={previewLesson?.id}
-                previewDurationSeconds={previewLesson?.duration_seconds}
+                previewVideoEndpoint={previewSource?.endpoint}
+                previewDurationSeconds={previewSource?.duration_seconds}
               />
               </div>
 

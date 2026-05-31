@@ -9,9 +9,9 @@ type Props = {
   color: string;
   title: string;
   preview?: PreviewVideo;
-  // When the admin marked a lesson as the preview clip, its R2 video plays
-  // instead of the static youtube/gradient placeholder.
-  previewLessonId?: string;
+  // API path that returns { url } for an admin-uploaded R2 preview clip. When
+  // set, that video plays instead of the static youtube/gradient placeholder.
+  previewVideoEndpoint?: string;
   previewDurationSeconds?: number | null;
 };
 
@@ -26,7 +26,7 @@ export function VideoPreview({
   color,
   title,
   preview,
-  previewLessonId,
+  previewVideoEndpoint,
   previewDurationSeconds,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -37,13 +37,13 @@ export function VideoPreview({
   const [r2Loading, setR2Loading] = useState(false);
   const [r2Error, setR2Error] = useState(false);
   useEffect(() => {
-    if (!open || !previewLessonId || r2Url || r2Loading) return;
+    if (!open || !previewVideoEndpoint || r2Url || r2Loading) return;
     let active = true;
     setR2Loading(true);
     setR2Error(false);
     (async () => {
       try {
-        const res = await fetch(`/api/lesson-video/${previewLessonId}`, {
+        const res = await fetch(previewVideoEndpoint, {
           cache: "no-store",
         });
         const json = (await res.json()) as { url?: string };
@@ -59,7 +59,7 @@ export function VideoPreview({
     return () => {
       active = false;
     };
-  }, [open, previewLessonId, r2Url, r2Loading]);
+  }, [open, previewVideoEndpoint, r2Url, r2Loading]);
 
   const youtubeThumb =
     preview?.type === "youtube"
@@ -150,7 +150,7 @@ export function VideoPreview({
                 <X className="h-5 w-5" />
               </button>
 
-              {previewLessonId ? (
+              {previewVideoEndpoint ? (
                 r2Url ? (
                   <video
                     src={r2Url}

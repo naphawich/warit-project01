@@ -9,7 +9,9 @@ import {
 export const runtime = "nodejs";
 
 type Body = {
-  lessonId: string;
+  kind?: "lesson" | "preview";
+  lessonId?: string;
+  previewCourseId?: number;
   key: string;
   uploadId: string;
   parts: { partNumber: number; etag: string }[];
@@ -33,12 +35,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
+  const isPreview = body.kind === "preview";
   if (
-    !body.lessonId ||
     !body.key ||
     !body.uploadId ||
     !Array.isArray(body.parts) ||
-    body.parts.length === 0
+    body.parts.length === 0 ||
+    (isPreview ? !body.previewCourseId : !body.lessonId)
   ) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
@@ -63,6 +66,29 @@ export async function POST(req: Request) {
 
   // Confirm with R2 + record the result
   const head = await headObject(body.key);
+  const hasDuration =
+    typeof body.durationSeconds === "number" && body.durationSeconds > 0;
+
+  if (isPreview) {
+    // Course-level preview clip → upsert course_previews.
+    const row: Record<string, unknown> = {
+      course_id: Number(body.previewCourseId),
+      video_storage_key: body.key,
+      video_size_bytes: head?.size ?? null,
+      video_uploaded_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    if (hasDuration) row.duration_seconds = Math.round(body.durationSeconds!);
+    const { error: upErr } = await admin
+      .from("course_previews")
+      .upsert(row, { onConflict: "course_id" });
+    if (upErr) {
+      console.error("[upload/complete] preview upsert failed", upErr);
+      return NextResponse.json({ error: "db_update_failed" }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, key: body.key, size: head?.size });
+  }
+
   const update: Record<string, unknown> = {
     video_storage_key: body.key,
     video_size_bytes: head?.size ?? null,
@@ -70,9 +96,7 @@ export async function POST(req: Request) {
   };
   // Only overwrite duration when we actually read one from the clip, so a
   // failed metadata read doesn't wipe a previously known runtime.
-  if (typeof body.durationSeconds === "number" && body.durationSeconds > 0) {
-    update.duration_seconds = Math.round(body.durationSeconds);
-  }
+  if (hasDuration) update.duration_seconds = Math.round(body.durationSeconds!);
   const { error: updateErr } = await admin
     .from("lessons")
     .update(update)

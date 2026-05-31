@@ -14,8 +14,6 @@ import {
   X,
   Trash2,
   Plus,
-  Eye,
-  EyeOff,
   Pencil,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -219,9 +217,6 @@ export default function AdminLessonsPage() {
     void run(() => apiCall(`/api/admin/lessons/${lesson.id}`, "DELETE"));
   };
 
-  const togglePreview = (lesson: LessonRow) =>
-    patchLesson(lesson.id, { is_preview: !lesson.is_preview });
-
   // ── Video upload ───────────────────────────────────────────────────────
   const startUpload = async (lesson: LessonRow, file: File) => {
     setUploads((u) => ({ ...u, [lesson.id]: { phase: "uploading" } }));
@@ -312,9 +307,14 @@ export default function AdminLessonsPage() {
               Admin
             </Link>
             <ChevronRight className="h-4 w-4" />
-            <span className="text-slate-900 font-medium truncate">
+            <Link
+              href={`/admin/courses/${course.id}`}
+              className="hover:text-brand-700 transition-colors truncate max-w-[20ch]"
+            >
               {course.title}
-            </span>
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <span className="text-slate-900 font-medium">บทเรียน</span>
           </nav>
         </div>
       </div>
@@ -329,7 +329,7 @@ export default function AdminLessonsPage() {
               {course.title}
             </h1>
             <p className="text-slate-600 max-w-2xl">
-              เพิ่ม/ลบบทและบทเรียน แก้ชื่อ-คำอธิบาย อัปโหลดวิดีโอ และเลือกคลิปตัวอย่าง —
+              เพิ่ม/ลบบทและบทเรียน แก้ชื่อ-คำอธิบาย และอัปโหลดวิดีโอของแต่ละบท —
               เวลาของแต่ละบทจะอัปเดตอัตโนมัติตามวิดีโอที่อัปโหลด
             </p>
           </div>
@@ -415,7 +415,6 @@ export default function AdminLessonsPage() {
                   onAddLesson={addLesson}
                   onPatchLesson={patchLesson}
                   onDeleteLesson={deleteLesson}
-                  onTogglePreview={togglePreview}
                   onUpload={startUpload}
                   onCancelUpload={cancelUpload}
                   onDeleteVideo={deleteVideo}
@@ -440,7 +439,6 @@ function ChapterCard({
   onAddLesson,
   onPatchLesson,
   onDeleteLesson,
-  onTogglePreview,
   onUpload,
   onCancelUpload,
   onDeleteVideo,
@@ -454,7 +452,6 @@ function ChapterCard({
   onAddLesson: (chapterId: string) => void;
   onPatchLesson: (lessonId: string, patch: Partial<LessonRow>) => void;
   onDeleteLesson: (lesson: LessonRow) => void;
-  onTogglePreview: (lesson: LessonRow) => void;
   onUpload: (lesson: LessonRow, file: File) => void;
   onCancelUpload: (lessonId: string) => void;
   onDeleteVideo: (lesson: LessonRow) => void;
@@ -512,7 +509,6 @@ function ChapterCard({
               busy={busy}
               onPatch={onPatchLesson}
               onDelete={onDeleteLesson}
-              onTogglePreview={onTogglePreview}
               onUpload={onUpload}
               onCancelUpload={onCancelUpload}
               onDeleteVideo={onDeleteVideo}
@@ -543,7 +539,6 @@ function LessonItem({
   busy,
   onPatch,
   onDelete,
-  onTogglePreview,
   onUpload,
   onCancelUpload,
   onDeleteVideo,
@@ -553,7 +548,6 @@ function LessonItem({
   busy: boolean;
   onPatch: (lessonId: string, patch: Partial<LessonRow>) => void;
   onDelete: (lesson: LessonRow) => void;
-  onTogglePreview: (lesson: LessonRow) => void;
   onUpload: (lesson: LessonRow, file: File) => void;
   onCancelUpload: (lessonId: string) => void;
   onDeleteVideo: (lesson: LessonRow) => void;
@@ -621,12 +615,6 @@ function LessonItem({
                 <CheckCircle2 className="h-3 w-3" />
                 มีวิดีโอ
               </span>
-            )}
-            {lesson.is_preview && (
-              <Badge className="bg-violet-100 text-violet-700 hover:bg-violet-100 border-0 h-5 px-1.5 text-[10px]">
-                <Eye className="h-3 w-3 mr-0.5" />
-                คลิปตัวอย่าง
-              </Badge>
             )}
           </div>
 
@@ -729,39 +717,15 @@ function LessonItem({
               primary={!hasVideo}
             />
             {hasVideo && (
-              <>
-                <Button
-                  onClick={() => onTogglePreview(lesson)}
-                  disabled={busy}
-                  variant="outline"
-                  className={
-                    lesson.is_preview
-                      ? "border-violet-300 text-violet-700 bg-violet-50 hover:bg-violet-100 h-8 px-3 text-xs"
-                      : "border-slate-200 text-slate-600 hover:bg-slate-50 h-8 px-3 text-xs"
-                  }
-                >
-                  {lesson.is_preview ? (
-                    <>
-                      <EyeOff className="h-3.5 w-3.5 mr-1" />
-                      เลิกเป็นตัวอย่าง
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-3.5 w-3.5 mr-1" />
-                      ตั้งเป็นคลิปตัวอย่าง
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={() => onDeleteVideo(lesson)}
-                  disabled={busy}
-                  variant="outline"
-                  className="border-red-200 text-red-700 hover:bg-red-50 h-8 px-2 text-xs"
-                  title="ลบเฉพาะวิดีโอ"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </>
+              <Button
+                onClick={() => onDeleteVideo(lesson)}
+                disabled={busy}
+                variant="outline"
+                className="border-red-200 text-red-700 hover:bg-red-50 h-8 px-2 text-xs"
+                title="ลบเฉพาะวิดีโอ"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             )}
             <div className="flex-1" />
             <Button

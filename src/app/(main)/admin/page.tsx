@@ -106,7 +106,7 @@ export default function AdminHome() {
               transition={{ duration: 0.3, delay: Math.min(i, 6) * 0.04 }}
             >
               <Link
-                href={`/admin/courses/${course.id}/lessons`}
+                href={`/admin/courses/${course.id}`}
                 className="group block bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:shadow-brand-700/5 hover:border-brand-200 transition-all"
               >
                 <div

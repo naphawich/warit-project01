@@ -14,7 +14,9 @@ export type UploadHandle = {
 
 type Options = {
   file: File;
-  lessonId: string;
+  // Provide exactly one target: a lesson row or a course-level preview clip.
+  lessonId?: string;
+  previewCourseId?: number;
   accessToken: string;
   onProgress?: (p: UploadProgress) => void;
   // How many parts to PUT concurrently. R2 handles plenty in parallel;
@@ -120,6 +122,10 @@ export function uploadFileMultipart(opts: Options): UploadHandle {
     // 0. Capture the real clip duration before uploading so the lesson shows
     //    the exact runtime of the video that was used.
     const durationSeconds = await readVideoDuration(opts.file);
+    const isPreview = opts.previewCourseId != null;
+    const targetFields = isPreview
+      ? { kind: "preview" as const, previewCourseId: opts.previewCourseId }
+      : { kind: "lesson" as const, lessonId: opts.lessonId };
 
     // 1. INIT — server creates the multipart upload + pre-signs every part
     const initRes = await fetch("/api/admin/upload/init", {
@@ -129,7 +135,7 @@ export function uploadFileMultipart(opts: Options): UploadHandle {
         Authorization: `Bearer ${opts.accessToken}`,
       },
       body: JSON.stringify({
-        lessonId: opts.lessonId,
+        ...targetFields,
         filename: opts.file.name,
         contentType: opts.file.type || "video/mp4",
         totalSize: opts.file.size,
@@ -207,7 +213,7 @@ export function uploadFileMultipart(opts: Options): UploadHandle {
         Authorization: `Bearer ${opts.accessToken}`,
       },
       body: JSON.stringify({
-        lessonId: opts.lessonId,
+        ...targetFields,
         key,
         uploadId,
         parts,
