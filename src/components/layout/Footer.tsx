@@ -25,12 +25,16 @@ export function Footer() {
               สำหรับผู้ที่ต้องการพัฒนาทักษะอย่างมืออาชีพ
             </p>
             <div className="flex gap-3 mt-5">
-              {[FacebookIcon, InstagramIcon, YoutubeIcon].map((Icon, i) => (
+              {[
+                { Icon: FacebookIcon, label: "Facebook" },
+                { Icon: InstagramIcon, label: "Instagram" },
+                { Icon: YoutubeIcon, label: "YouTube" },
+              ].map(({ Icon, label }) => (
                 <Link
-                  key={i}
+                  key={label}
                   href="#"
                   className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 hover:bg-brand-600 transition-colors"
-                  aria-label="social"
+                  aria-label={label}
                 >
                   <Icon className="h-4 w-4" />
                 </Link>

@@ -90,12 +90,13 @@ export function AvatarUploader({ displayName, email }: Props) {
       const { data: publicUrl } = supabase.storage
         .from("avatars")
         .getPublicUrl(path);
-      // Append a version query so caches refresh
-      const versioned = `${publicUrl.publicUrl}?v=${Date.now()}`;
+      const cleanUrl = publicUrl.publicUrl;
+      // Append version for cache-busting in the current session only (not stored in DB)
+      const versioned = `${cleanUrl}?v=${Date.now()}`;
 
       const { error: profErr } = await supabase
         .from("profiles")
-        .update({ avatar_url: versioned })
+        .update({ avatar_url: cleanUrl })
         .eq("id", user.id);
       if (profErr) throw profErr;
 

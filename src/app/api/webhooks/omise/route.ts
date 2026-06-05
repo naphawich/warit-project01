@@ -12,6 +12,14 @@ export const runtime = "nodejs";
 type OmiseEvent = { key?: string; data?: any };
 
 export async function POST(req: Request) {
+  // Verify shared secret to ensure this request comes from Omise.
+  // Configure Omise webhook URL as: https://<domain>/api/webhooks/omise?secret=YOUR_SECRET
+  const expected = process.env.OMISE_WEBHOOK_SECRET;
+  const provided = new URL(req.url).searchParams.get("secret");
+  if (!expected || provided !== expected) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   let event: OmiseEvent;
   try {
     event = (await req.json()) as OmiseEvent;
@@ -70,6 +78,16 @@ export async function POST(req: Request) {
   if (orderErr || !order) {
     console.error("[webhook] order not found", orderId, orderErr);
     return NextResponse.json({ error: "order_not_found" }, { status: 404 });
+  }
+
+  // Verify paid amount matches order total (both in satang)
+  if (typeof charge.amount === "number" && charge.amount !== order.total_amount) {
+    console.warn("[webhook] amount mismatch", {
+      orderId,
+      chargeAmount: charge.amount,
+      orderAmount: order.total_amount,
+    });
+    return NextResponse.json({ error: "amount_mismatch" }, { status: 400 });
   }
 
   // Defensive: charge ID should match order's charge
@@ -140,9 +158,9 @@ export async function POST(req: Request) {
       if (recipient) {
         const siteUrl =
           process.env.NEXT_PUBLIC_SITE_URL ??
-          process.env.VERCEL_URL
+          (process.env.VERCEL_URL
             ? `https://${process.env.VERCEL_URL}`
-            : "https://warit-project01.vercel.app";
+            : "https://warit-project01.vercel.app");
         await sendReceiptEmail({
           to: recipient,
           customerName: profile?.full_name ?? "",

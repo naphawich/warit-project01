@@ -278,7 +278,7 @@ export default function LearnPage() {
 
   const activeLesson = lessons[activeLessonIdx] ?? lessons[0];
   const completedCount = Object.keys(completed).length;
-  const progress = Math.round((completedCount / lessons.length) * 100);
+  const progress = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
   const isLessonComplete = (lesson: Lesson) => !!completed[lesson.id];
 
   const goToLesson = (idx: number) => {

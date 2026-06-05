@@ -66,7 +66,7 @@ export async function PATCH(
   if (error) {
     console.error("[admin/lessons PATCH] failed", error);
     return NextResponse.json(
-      { error: "db_error", detail: error.message },
+      { error: "Database error" },
       { status: 500 }
     );
   }
@@ -112,7 +112,7 @@ export async function DELETE(
   if (delErr) {
     console.error("[admin/lessons DELETE] failed", delErr);
     return NextResponse.json(
-      { error: "db_error", detail: delErr.message },
+      { error: "Database error" },
       { status: 500 }
     );
   }

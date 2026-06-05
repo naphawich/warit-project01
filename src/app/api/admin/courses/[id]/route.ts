@@ -62,7 +62,7 @@ export async function PATCH(
   if (error) {
     console.error("[admin/courses PATCH] failed", error);
     return NextResponse.json(
-      { error: "db_error", detail: error.message },
+      { error: "Database error" },
       { status: 500 }
     );
   }

@@ -235,19 +235,6 @@ export default function CartPage() {
                     </span>
                   </div>
 
-                  <div className="flex gap-2 mb-4">
-                    <Input
-                      placeholder="โค้ดส่วนลด"
-                      className="h-11"
-                    />
-                    <Button
-                      variant="outline"
-                      className="h-11 border-brand-200 text-brand-700 hover:bg-brand-50"
-                    >
-                      ใช้
-                    </Button>
-                  </div>
-
                   <Button
                     onClick={handleCheckout}
                     disabled={userLoading || checkingOut}
@@ -287,21 +274,6 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-2xl bg-brand-50/60 border border-brand-100 p-5">
-                  <div className="flex gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-700 text-white flex-shrink-0">
-                      <Sparkles className="h-4 w-4" />
-                    </div>
-                    <div className="text-sm">
-                      <div className="font-semibold text-slate-900 mb-1">
-                        ซื้อ 2 คอร์สขึ้นไปลด 15%
-                      </div>
-                      <div className="text-slate-600 text-xs">
-                        ระบบจะใช้ส่วนลดให้อัตโนมัติเมื่อเข้าเงื่อนไข
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </aside>
           </div>

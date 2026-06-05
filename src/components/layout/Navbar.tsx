@@ -48,6 +48,23 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => document.body.classList.remove("overflow-hidden");
+  }, [open]);
+
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-300 ${
@@ -90,7 +107,9 @@ export function Navbar() {
             <button
               className="p-2 rounded-lg text-slate-700 hover:bg-slate-100"
               onClick={() => setOpen(!open)}
-              aria-label="Toggle menu"
+              aria-label="เปิด/ปิดเมนู"
+              aria-expanded={open}
+              aria-controls="mobile-nav"
             >
               {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -98,7 +117,7 @@ export function Navbar() {
         </div>
 
         {open && (
-          <div className="md:hidden pb-4 pt-2 border-t border-slate-200">
+          <div id="mobile-nav" className="md:hidden pb-4 pt-2 border-t border-slate-200">
             <nav className="flex flex-col gap-1">
               {navItems.map((item) => (
                 <Link

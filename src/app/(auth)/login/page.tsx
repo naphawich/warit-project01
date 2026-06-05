@@ -108,12 +108,9 @@ export default function LoginPage() {
             <Label htmlFor="password" className="text-slate-700">
               รหัสผ่าน
             </Label>
-            <Link
-              href="#"
-              className="text-sm text-brand-700 hover:text-brand-800 hover:underline font-medium"
-            >
+            <span className="text-sm text-slate-400 font-medium">
               ลืมรหัสผ่าน?
-            </Link>
+            </span>
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -140,16 +137,6 @@ export default function LoginPage() {
               )}
             </button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Checkbox id="remember" />
-          <Label
-            htmlFor="remember"
-            className="text-sm text-slate-600 font-normal cursor-pointer"
-          >
-            จดจำการเข้าสู่ระบบ
-          </Label>
         </div>
 
         <Button

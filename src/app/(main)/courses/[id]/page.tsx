@@ -280,9 +280,6 @@ export default async function CoursePage({
                   <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-0">
                     ลด {discount}%
                   </Badge>
-                  <span className="text-xs text-slate-500">
-                    เหลือเวลาอีก 2 วัน
-                  </span>
                 </div>
 
                 <CourseActions
@@ -297,16 +294,6 @@ export default async function CoursePage({
                   }}
                 />
 
-                <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-slate-100">
-                  <button className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-brand-700 transition-colors">
-                    <Heart className="h-4 w-4" />
-                    บันทึก
-                  </button>
-                  <button className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-brand-700 transition-colors">
-                    <Share2 className="h-4 w-4" />
-                    แชร์
-                  </button>
-                </div>
 
                 <div className="mt-6 pt-6 border-t border-slate-100">
                   <div className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-1.5">

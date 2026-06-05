@@ -1,16 +1,45 @@
 import { NextResponse } from "next/server";
-import { authenticateRequest } from "@/lib/auth-server";
+import { authenticateRequest, adminClient } from "@/lib/auth-server";
 import { omise } from "@/lib/omise-server";
+import { courses as staticCourses } from "@/lib/data";
 
 export const runtime = "nodejs";
 
 type Body = {
   items: Array<{
     id: number;
-    title: string;
-    price: number; // baht
+    title?: string;
+    price?: number;
   }>;
 };
+
+async function getCoursePrice(courseId: number): Promise<number | null> {
+  const fromStatic = staticCourses.find((c) => c.id === courseId);
+  if (fromStatic) return fromStatic.price;
+  if (courseId >= 100) {
+    const { data } = await adminClient()
+      .from("courses")
+      .select("price")
+      .eq("id", courseId)
+      .maybeSingle();
+    if (data && typeof data.price === "number") return data.price;
+  }
+  return null;
+}
+
+async function getCourseTitle(courseId: number): Promise<string> {
+  const fromStatic = staticCourses.find((c) => c.id === courseId);
+  if (fromStatic) return fromStatic.title;
+  if (courseId >= 100) {
+    const { data } = await adminClient()
+      .from("courses")
+      .select("title")
+      .eq("id", courseId)
+      .maybeSingle();
+    if (data?.title) return data.title;
+  }
+  return "คอร์ส";
+}
 
 export async function POST(req: Request) {
   const authed = await authenticateRequest(req);
@@ -36,8 +65,21 @@ export async function POST(req: Request) {
     );
   }
 
-  // Compute total (server-trusted from request — in a real app, look up prices in DB)
-  const totalBaht = body.items.reduce((sum, i) => sum + i.price, 0);
+  // Look up price and title server-side — never trust i.price / i.title from client
+  const pricedItems: Array<{ id: number; title: string; price: number }> = [];
+  for (const i of body.items) {
+    const price = await getCoursePrice(i.id);
+    if (price === null) {
+      return NextResponse.json(
+        { error: "course_not_found", message: `ไม่พบคอร์ส id ${i.id}` },
+        { status: 400 }
+      );
+    }
+    const title = await getCourseTitle(i.id);
+    pricedItems.push({ id: i.id, title, price });
+  }
+
+  const totalBaht = pricedItems.reduce((sum, p) => sum + p.price, 0);
   const totalSatang = totalBaht * 100;
 
   if (totalSatang < 2000) {
@@ -64,17 +106,17 @@ export async function POST(req: Request) {
   if (orderErr || !orderRow) {
     console.error("[checkout] failed to insert order", orderErr);
     return NextResponse.json(
-      { error: "db_error", detail: orderErr?.message },
+      { error: "db_error", message: "เกิดข้อผิดพลาด กรุณาลองใหม่" },
       { status: 500 }
     );
   }
 
-  // 2. Insert line items
-  const itemRows = body.items.map((i) => ({
+  // 2. Insert line items using server-verified prices
+  const itemRows = pricedItems.map((p) => ({
     order_id: orderRow.id,
-    course_id: i.id,
-    course_title: i.title,
-    price: i.price * 100,
+    course_id: p.id,
+    course_title: p.title,
+    price: p.price * 100,
   }));
   const { error: itemsErr } = await supabase.from("order_items").insert(itemRows);
   if (itemsErr) {
@@ -82,7 +124,7 @@ export async function POST(req: Request) {
     // Best effort cleanup
     await supabase.from("orders").delete().eq("id", orderRow.id);
     return NextResponse.json(
-      { error: "db_error", detail: itemsErr.message },
+      { error: "db_error", message: "เกิดข้อผิดพลาด กรุณาลองใหม่" },
       { status: 500 }
     );
   }

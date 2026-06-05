@@ -43,7 +43,7 @@ export async function DELETE(
   if (error) {
     console.error("[admin/course-preview DELETE] failed", error);
     return NextResponse.json(
-      { error: "db_error", detail: error.message },
+      { error: "Database error" },
       { status: 500 }
     );
   }

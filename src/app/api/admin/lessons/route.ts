@@ -76,7 +76,7 @@ export async function POST(req: Request) {
   if (error || !data) {
     console.error("[admin/lessons POST] insert failed", error);
     return NextResponse.json(
-      { error: "db_error", detail: error?.message },
+      { error: "Database error" },
       { status: 500 }
     );
   }

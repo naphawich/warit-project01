@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Database,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -24,11 +23,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useUser, getInitials } from "@/lib/use-user";
+import { useOwnedCourseIds } from "@/lib/use-ownership";
 import { AvatarUploader } from "@/components/profile/AvatarUploader";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, profile, loading, refresh } = useUser();
+  const ownedIds = useOwnedCourseIds();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -278,33 +279,6 @@ export default function ProfilePage() {
                 )}
               </section>
 
-              {/* Raw data card */}
-              <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <Database className="h-4 w-4 text-brand-700" />
-                  <h2 className="text-lg font-bold text-slate-900">
-                    ข้อมูลที่เก็บใน Supabase
-                  </h2>
-                </div>
-                <p className="text-sm text-slate-500 mb-4">
-                  ข้อมูลนี้บันทึกในตาราง <code className="bg-slate-100 px-1.5 py-0.5 rounded text-brand-700">public.profiles</code>{" "}
-                  พร้อม Row Level Security — คุณเห็นได้แค่แถวของตัวเอง
-                </p>
-                <pre className="rounded-xl bg-slate-900 text-slate-100 p-4 text-xs overflow-x-auto leading-relaxed">
-{JSON.stringify(
-  {
-    id: profile?.id,
-    full_name: profile?.full_name,
-    email: profile?.email,
-    avatar_url: profile?.avatar_url,
-    created_at: profile?.created_at,
-    updated_at: profile?.updated_at,
-  },
-  null,
-  2
-)}
-                </pre>
-              </section>
             </div>
 
             {/* Stats / actions */}
@@ -314,9 +288,9 @@ export default function ProfilePage() {
                   สถิติของฉัน
                 </h3>
                 <div className="space-y-3 text-sm">
-                  <Stat label="คอร์สที่เรียน" value="0" />
-                  <Stat label="ชั่วโมงเรียน" value="0 ชม." />
-                  <Stat label="ใบประกาศ" value="0" />
+                  <Stat label="คอร์สที่เรียน" value={ownedIds === null ? "-" : String(ownedIds.size)} />
+                  <Stat label="ชั่วโมงเรียน" value="-" />
+                  <Stat label="ใบประกาศ" value="-" />
                 </div>
                 <p className="mt-4 text-xs text-slate-500 leading-relaxed">
                   เริ่มเรียนคอร์สแรกของคุณ
