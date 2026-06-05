@@ -12,12 +12,21 @@ export const runtime = "nodejs";
 type OmiseEvent = { key?: string; data?: any };
 
 export async function POST(req: Request) {
-  // Verify shared secret to ensure this request comes from Omise.
-  // Configure Omise webhook URL as: https://<domain>/api/webhooks/omise?secret=YOUR_SECRET
+  // Optional shared-secret gate. Omise has no built-in webhook signature, so a
+  // secret in the URL (https://<domain>/api/webhooks/omise?secret=YOUR_SECRET)
+  // is a lightweight way to reject forged requests.
+  //
+  // It is OPT-IN: if OMISE_WEBHOOK_SECRET isn't configured we skip the check
+  // rather than 401 every event — otherwise forgetting the env var on Vercel
+  // would silently break every payment. Even without it, the charge is still
+  // re-fetched from Omise and the amount is verified below, so a forged event
+  // can't grant a course.
   const expected = process.env.OMISE_WEBHOOK_SECRET;
-  const provided = new URL(req.url).searchParams.get("secret");
-  if (!expected || provided !== expected) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (expected) {
+    const provided = new URL(req.url).searchParams.get("secret");
+    if (provided !== expected) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
   }
 
   let event: OmiseEvent;
