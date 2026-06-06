@@ -171,47 +171,64 @@ export default function LearnPage() {
   // lesson changes (and refreshed before the 1-hour URL expires).
   const [r2VideoUrl, setR2VideoUrl] = useState<string | null>(null);
   const [r2VideoError, setR2VideoError] = useState<string | null>(null);
+  // Bumped by a timer to re-fetch the signed URL before it expires.
+  const [r2RefreshTick, setR2RefreshTick] = useState(0);
   const activeLessonForFetch = lessons[activeLessonIdx];
+  const activeDbId = activeLessonForFetch?.dbId;
+  const activeHasR2 = activeLessonForFetch?.hasR2Video;
+
+  // Clear any stale video the moment the lesson changes. Kept separate from the
+  // fetch effect so a refresh tick can swap the URL in place without flicker.
   useEffect(() => {
     setR2VideoUrl(null);
     setR2VideoError(null);
-    if (
-      !user ||
-      !activeLessonForFetch?.dbId ||
-      !activeLessonForFetch.hasR2Video
-    ) {
-      return;
-    }
+    setR2RefreshTick(0);
+  }, [activeDbId, activeHasR2]);
+
+  useEffect(() => {
+    if (!user || !activeDbId || !activeHasR2) return;
     let active = true;
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     (async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session || !active) return;
       try {
-        const res = await fetch(
-          `/api/lesson-video/${activeLessonForFetch.dbId}`,
-          {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-            cache: "no-store",
-          }
-        );
+        const res = await fetch(`/api/lesson-video/${activeDbId}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          cache: "no-store",
+        });
         if (!active) return;
         if (!res.ok) {
           setR2VideoError("ไม่สามารถโหลดวิดีโอ");
           return;
         }
-        const json = (await res.json()) as { url: string };
+        const json = (await res.json()) as {
+          url: string;
+          expires_at?: string;
+        };
         if (!active) return;
+        setR2VideoError(null);
         setR2VideoUrl(json.url);
+        // Schedule a refresh ~1 min before the signed URL expires so long
+        // videos / long sessions never hit a dead URL mid-playback.
+        const msUntilExpiry = json.expires_at
+          ? new Date(json.expires_at).getTime() - Date.now()
+          : 55 * 60 * 1000;
+        const refreshInMs = Math.max(30_000, msUntilExpiry - 60_000);
+        refreshTimer = setTimeout(() => {
+          if (active) setR2RefreshTick((t) => t + 1);
+        }, refreshInMs);
       } catch {
         if (active) setR2VideoError("เครือข่ายมีปัญหา");
       }
     })();
     return () => {
       active = false;
+      if (refreshTimer) clearTimeout(refreshTimer);
     };
-  }, [user, activeLessonForFetch?.dbId, activeLessonForFetch?.hasR2Video]);
+  }, [user, activeDbId, activeHasR2, r2RefreshTick]);
 
   // Redirect logged-out users to login
   useEffect(() => {
@@ -255,6 +272,41 @@ export default function LearnPage() {
     }
   }, [completed, activeLessonIdx, course, user]);
 
+  // Cross-device progress: lesson_progress rows exist only for DB-backed
+  // lessons (lesson_id is a FK to lessons.id). Synthetic/generated lessons stay
+  // in localStorage only.
+  const dbLessonIdSet = useMemo(
+    () => new Set(dbLessons.map((l) => l.id)),
+    [dbLessons]
+  );
+
+  // Overlay server progress on top of the localStorage cache (server wins).
+  useEffect(() => {
+    if (!user || !course || dbLessons.length === 0) return;
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("lesson_progress")
+        .select("lesson_id, completed")
+        .eq("course_id", course.id);
+      if (!active || !data) return;
+      setCompleted((prev) => {
+        const next = { ...prev };
+        for (const row of data as {
+          lesson_id: string;
+          completed: boolean;
+        }[]) {
+          if (row.completed) next[row.lesson_id] = true;
+          else delete next[row.lesson_id];
+        }
+        return next;
+      });
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user, course, dbLessons.length]);
+
   if (userLoading || !user || ownershipLoading || course === undefined) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -290,12 +342,34 @@ export default function LearnPage() {
   };
 
   const toggleComplete = (lessonId: string) => {
+    const nowComplete = !completed[lessonId];
     setCompleted((prev) => {
       const next = { ...prev };
-      if (next[lessonId]) delete next[lessonId];
-      else next[lessonId] = true;
+      if (nowComplete) next[lessonId] = true;
+      else delete next[lessonId];
       return next;
     });
+    // Persist DB-backed lessons to lesson_progress (fire-and-forget; localStorage
+    // already covers the offline + synthetic-lesson cases).
+    if (user && dbLessonIdSet.has(lessonId)) {
+      void supabase
+        .from("lesson_progress")
+        .upsert(
+          {
+            user_id: user.id,
+            course_id: course.id,
+            lesson_id: lessonId,
+            completed: nowComplete,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,lesson_id" }
+        )
+        .then(({ error }) => {
+          if (error) {
+            console.warn("[learn] progress sync failed", error.message);
+          }
+        });
+    }
   };
 
   return (

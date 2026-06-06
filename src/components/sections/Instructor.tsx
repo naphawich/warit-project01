@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion } from "motion/react";
 import { User, CheckCircle2, Globe } from "lucide-react";
 import { LinkedinIcon, TwitterIcon } from "@/components/icons/SocialIcons";
@@ -49,11 +50,12 @@ export function Instructor() {
                     strokeWidth={1}
                   />
                 ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={INSTRUCTOR_PHOTO}
                     alt="วริศ ฤทธิ์มานะ"
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="(min-width: 1024px) 320px, 288px"
+                    className="object-cover"
                     onError={() => setPhotoFailed(true)}
                   />
                 )}

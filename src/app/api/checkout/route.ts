@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { authenticateRequest, adminClient } from "@/lib/auth-server";
 import { omise } from "@/lib/omise-server";
 import { courses as staticCourses } from "@/lib/data";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
+
+// Each checkout creates a real Omise charge + DB rows, so cap how fast a single
+// user can trigger it. 8 per minute is far above any legitimate flow.
+const CHECKOUT_LIMIT = 8;
+const CHECKOUT_WINDOW_MS = 60_000;
 
 type Body = {
   items: Array<{
@@ -13,32 +19,64 @@ type Body = {
   }>;
 };
 
-async function getCoursePrice(courseId: number): Promise<number | null> {
-  const fromStatic = staticCourses.find((c) => c.id === courseId);
-  if (fromStatic) return fromStatic.price;
-  if (courseId >= 100) {
-    const { data } = await adminClient()
-      .from("courses")
-      .select("price")
-      .eq("id", courseId)
-      .maybeSingle();
-    if (data && typeof data.price === "number") return data.price;
-  }
-  return null;
-}
+type PricedItem = { id: number; title: string; price: number };
 
-async function getCourseTitle(courseId: number): Promise<string> {
-  const fromStatic = staticCourses.find((c) => c.id === courseId);
-  if (fromStatic) return fromStatic.title;
-  if (courseId >= 100) {
+// Resolve price + title for every cart item server-side (never trust the
+// client). Static courses (1-9) resolve with no network; all DB courses are
+// fetched in ONE round-trip via .in(), and only PUBLISHED courses are
+// sellable so a draft id can't be checked out.
+async function priceItems(
+  ids: number[]
+): Promise<
+  | { ok: true; items: PricedItem[] }
+  | { ok: false; missingId: number }
+> {
+  const staticById = new Map(staticCourses.map((c) => [c.id, c]));
+  const resolved = new Map<number, PricedItem>();
+  const dbIds: number[] = [];
+
+  for (const id of ids) {
+    const s = staticById.get(id);
+    if (s) {
+      resolved.set(id, { id, title: s.title, price: s.price });
+    } else if (id >= 100) {
+      dbIds.push(id);
+    } else {
+      return { ok: false, missingId: id };
+    }
+  }
+
+  if (dbIds.length > 0) {
     const { data } = await adminClient()
       .from("courses")
-      .select("title")
-      .eq("id", courseId)
-      .maybeSingle();
-    if (data?.title) return data.title;
+      .select("id, title, price")
+      .in("id", dbIds)
+      .eq("is_published", true);
+    const dbById = new Map(
+      (data ?? []).map((r) => [r.id as number, r])
+    );
+    for (const id of dbIds) {
+      const row = dbById.get(id);
+      if (!row || typeof row.price !== "number") {
+        return { ok: false, missingId: id };
+      }
+      resolved.set(id, {
+        id,
+        title: (row.title as string) ?? "คอร์ส",
+        price: row.price as number,
+      });
+    }
   }
-  return "คอร์ส";
+
+  // Preserve cart order; resolved is keyed by unique id so duplicates collapse.
+  const items: PricedItem[] = [];
+  const seen = new Set<number>();
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    items.push(resolved.get(id)!);
+  }
+  return { ok: true, items };
 }
 
 export async function POST(req: Request) {
@@ -50,6 +88,15 @@ export async function POST(req: Request) {
     );
   }
   const { user, supabase } = authed;
+
+  // Throttle per authenticated user.
+  const limit = rateLimit(`checkout:${user.id}`, CHECKOUT_LIMIT, CHECKOUT_WINDOW_MS);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "rate_limited", message: "ทำรายการถี่เกินไป กรุณารอสักครู่" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+    );
+  }
 
   let body: Body;
   try {
@@ -66,18 +113,14 @@ export async function POST(req: Request) {
   }
 
   // Look up price and title server-side — never trust i.price / i.title from client
-  const pricedItems: Array<{ id: number; title: string; price: number }> = [];
-  for (const i of body.items) {
-    const price = await getCoursePrice(i.id);
-    if (price === null) {
-      return NextResponse.json(
-        { error: "course_not_found", message: `ไม่พบคอร์ส id ${i.id}` },
-        { status: 400 }
-      );
-    }
-    const title = await getCourseTitle(i.id);
-    pricedItems.push({ id: i.id, title, price });
+  const priced = await priceItems(body.items.map((i) => i.id));
+  if (!priced.ok) {
+    return NextResponse.json(
+      { error: "course_not_found", message: `ไม่พบคอร์ส id ${priced.missingId}` },
+      { status: 400 }
+    );
   }
+  const pricedItems = priced.items;
 
   const totalBaht = pricedItems.reduce((sum, p) => sum + p.price, 0);
   const totalSatang = totalBaht * 100;

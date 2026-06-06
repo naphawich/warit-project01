@@ -4,13 +4,27 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest, adminClient } from "@/lib/auth-server";
 import { presignDownloadUrl } from "@/lib/r2-server";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
+
+// Generous per-IP cap. Normal use is ~1 call per lesson switch (+1/hr refresh);
+// this only stops someone hammering the unauthenticated preview branch.
+const VIDEO_LIMIT = 60;
+const VIDEO_WINDOW_MS = 60_000;
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ lessonId: string }> }
 ) {
+  const limit = rateLimit(`lesson-video:${clientIp(req)}`, VIDEO_LIMIT, VIDEO_WINDOW_MS);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+    );
+  }
+
   const { lessonId } = await params;
 
   const admin = adminClient();
