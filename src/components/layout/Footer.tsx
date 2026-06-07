@@ -76,7 +76,7 @@ export function Footer() {
               ].map((cat) => (
                 <li key={cat}>
                   <Link
-                    href="#"
+                    href="/courses"
                     className="hover:text-brand-400 transition-colors"
                   >
                     {cat}
@@ -108,10 +108,10 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
           <p>© {new Date().getFullYear()} Warit Academy. สงวนลิขสิทธิ์ทุกประการ</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-brand-400 transition-colors">
+            <Link href="/privacy" className="hover:text-brand-400 transition-colors">
               นโยบายความเป็นส่วนตัว
             </Link>
-            <Link href="#" className="hover:text-brand-400 transition-colors">
+            <Link href="/terms" className="hover:text-brand-400 transition-colors">
               เงื่อนไขการใช้งาน
             </Link>
           </div>

@@ -288,6 +288,7 @@ export default function LearnPage() {
       const { data } = await supabase
         .from("lesson_progress")
         .select("lesson_id, completed")
+        .eq("user_id", user.id)
         .eq("course_id", course.id);
       if (!active || !data) return;
       setCompleted((prev) => {

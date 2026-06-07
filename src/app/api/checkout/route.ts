@@ -122,6 +122,28 @@ export async function POST(req: Request) {
   }
   const pricedItems = priced.items;
 
+  // Reject courses the user already owns so they can't be charged twice for the
+  // same course (the grant is idempotent, so a second purchase = paying for
+  // nothing). RLS scopes this to the user's own entitlements.
+  const { data: owned } = await supabase
+    .from("user_courses")
+    .select("course_id")
+    .in(
+      "course_id",
+      pricedItems.map((p) => p.id)
+    );
+  if (owned && owned.length > 0) {
+    const ownedIds = new Set(owned.map((o) => o.course_id as number));
+    const dup = pricedItems.find((p) => ownedIds.has(p.id));
+    return NextResponse.json(
+      {
+        error: "already_owned",
+        message: `คุณมีคอร์ส "${dup?.title ?? ""}" อยู่แล้ว`,
+      },
+      { status: 409 }
+    );
+  }
+
   const totalBaht = pricedItems.reduce((sum, p) => sum + p.price, 0);
   const totalSatang = totalBaht * 100;
 

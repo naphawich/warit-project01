@@ -89,8 +89,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "order_not_found" }, { status: 404 });
   }
 
-  // Verify paid amount matches order total (both in satang)
-  if (typeof charge.amount === "number" && charge.amount !== order.total_amount) {
+  // Verify the paid amount. Fail closed: if Omise didn't return an amount we
+  // refuse to grant rather than silently skipping the check (M5).
+  if (typeof charge.amount !== "number") {
+    console.error("[webhook] charge has no amount", eventChargeId);
+    return NextResponse.json({ error: "amount_missing" }, { status: 400 });
+  }
+  if (charge.amount !== order.total_amount) {
     console.warn("[webhook] amount mismatch", {
       orderId,
       chargeAmount: charge.amount,
@@ -108,92 +113,79 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "charge_mismatch" }, { status: 409 });
   }
 
-  // Idempotency: already processed
-  if (order.status === "paid") {
-    return NextResponse.json({ ok: true, idempotent: true });
-  }
-  if (order.status === "failed" || order.status === "expired") {
-    // Allow late "successful" to flip to paid (rare but possible)
-    if (status !== "successful") {
-      return NextResponse.json({ ok: true, no_change: true });
-    }
-  }
-
   if (status === "successful") {
-    const paidAt = new Date().toISOString();
-
-    // 1. Mark order as paid
-    const { error: updateErr } = await admin
-      .from("orders")
-      .update({ status: "paid", paid_at: paidAt })
-      .eq("id", orderId);
-    if (updateErr) {
-      console.error("[webhook] failed to mark paid", updateErr);
-      return NextResponse.json({ error: "db_update_failed" }, { status: 500 });
+    // Mark paid + grant entitlements ATOMICALLY in a single DB transaction.
+    // Idempotent: a retry re-grants if a previous attempt marked the order
+    // paid but failed to grant (fixes the "paid but 0 courses" bug, C1/CQ#1),
+    // and reports whether the order was already paid so we don't double-send
+    // the receipt.
+    const { data: rows, error: rpcErr } = await admin.rpc("fulfill_paid_order", {
+      p_order_id: orderId,
+    });
+    if (rpcErr) {
+      console.error("[webhook] fulfill_paid_order failed", rpcErr);
+      // 500 → Omise retries the webhook until fulfillment succeeds.
+      return NextResponse.json({ error: "fulfill_failed" }, { status: 500 });
     }
 
-    // 2. Grant entitlements + load items (need them for the receipt)
-    const { data: items } = await admin
-      .from("order_items")
-      .select("course_id, course_title, price")
-      .eq("order_id", orderId);
+    const items =
+      (rows as
+        | {
+            course_id: number;
+            course_title: string;
+            price: number;
+            was_already_paid: boolean;
+          }[]
+        | null) ?? [];
+    const alreadyPaid = items[0]?.was_already_paid ?? false;
 
-    if (items && items.length > 0) {
-      const rows = items.map((it) => ({
-        user_id: order.user_id,
-        course_id: it.course_id,
-        order_id: orderId,
-      }));
-      const { error: grantErr } = await admin
-        .from("user_courses")
-        .upsert(rows, { onConflict: "user_id,course_id", ignoreDuplicates: true });
-      if (grantErr) {
-        console.error("[webhook] failed to grant courses", grantErr);
-        return NextResponse.json(
-          { error: "grant_failed" },
-          { status: 500 }
-        );
+    // Send receipt only on the first successful fulfillment.
+    if (!alreadyPaid) {
+      try {
+        const { data: profile } = await admin
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", order.user_id)
+          .maybeSingle();
+        const recipient = profile?.email;
+        if (recipient) {
+          const siteUrl =
+            process.env.NEXT_PUBLIC_SITE_URL ??
+            (process.env.VERCEL_URL
+              ? `https://${process.env.VERCEL_URL}`
+              : "https://warit-project01.vercel.app");
+          await sendReceiptEmail({
+            to: recipient,
+            customerName: profile?.full_name ?? "",
+            orderId,
+            totalAmount: order.total_amount,
+            paidAt: new Date().toISOString(),
+            items: items.map((i) => ({
+              course_id: i.course_id,
+              course_title: i.course_title,
+              price: i.price,
+            })),
+            siteUrl,
+          });
+        } else {
+          console.warn("[webhook] no email for user, skipping receipt", order.user_id);
+        }
+      } catch (e) {
+        console.error("[webhook] receipt email error (non-fatal)", e);
       }
     }
 
-    // 3. Send receipt email (fire-and-forget; failure must not block webhook)
-    try {
-      const { data: profile } = await admin
-        .from("profiles")
-        .select("full_name, email")
-        .eq("id", order.user_id)
-        .maybeSingle();
-      const recipient = profile?.email;
-      if (recipient) {
-        const siteUrl =
-          process.env.NEXT_PUBLIC_SITE_URL ??
-          (process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}`
-            : "https://warit-project01.vercel.app");
-        await sendReceiptEmail({
-          to: recipient,
-          customerName: profile?.full_name ?? "",
-          orderId,
-          totalAmount: order.total_amount,
-          paidAt,
-          items: items ?? [],
-          siteUrl,
-        });
-      } else {
-        console.warn("[webhook] no email for user, skipping receipt", order.user_id);
-      }
-    } catch (e) {
-      console.error("[webhook] receipt email error (non-fatal)", e);
-    }
-
-    return NextResponse.json({ ok: true, status: "paid" });
+    return NextResponse.json({ ok: true, status: "paid", idempotent: alreadyPaid });
   }
 
+  // Non-success events must NEVER downgrade an already-paid order. The `neq`
+  // guard makes this safe even if Omise delivers events out of order (C3).
   if (status === "failed") {
     await admin
       .from("orders")
       .update({ status: "failed" })
-      .eq("id", orderId);
+      .eq("id", orderId)
+      .neq("status", "paid");
     return NextResponse.json({ ok: true, status: "failed" });
   }
 
@@ -201,7 +193,8 @@ export async function POST(req: Request) {
     await admin
       .from("orders")
       .update({ status: "expired" })
-      .eq("id", orderId);
+      .eq("id", orderId)
+      .neq("status", "paid");
     return NextResponse.json({ ok: true, status: "expired" });
   }
 

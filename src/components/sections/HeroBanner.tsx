@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "motion/react";
 import { ArrowRight, PlayCircle, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,8 @@ export function HeroBanner() {
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button
                 size="lg"
+                render={<Link href="/courses" />}
+                nativeButton={false}
                 className="bg-brand-700 hover:bg-brand-800 text-white shadow-lg shadow-brand-700/25 group h-12 px-6"
               >
                 เริ่มเรียน
@@ -61,6 +64,8 @@ export function HeroBanner() {
               <Button
                 size="lg"
                 variant="outline"
+                render={<Link href="/courses" />}
+                nativeButton={false}
                 className="border-brand-200 text-brand-700 hover:bg-brand-50 h-12 px-6"
               >
                 <PlayCircle className="mr-1 h-4 w-4" />

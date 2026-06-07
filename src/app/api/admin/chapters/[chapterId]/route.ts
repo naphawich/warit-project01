@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { authenticateAdmin } from "@/lib/admin-server";
 import { deleteObject } from "@/lib/r2-server";
+import { repackGlobalIndex } from "@/lib/lesson-index";
 
 export const runtime = "nodejs";
 
@@ -130,6 +131,9 @@ export async function DELETE(
       .eq("course_id", chapter.course_id)
       .eq("chapter_index", c.chapter_index);
   }
+
+  // Keep lesson numbers contiguous after removing a whole chapter's lessons.
+  await repackGlobalIndex(admin, chapter.course_id);
 
   return NextResponse.json({ ok: true });
 }

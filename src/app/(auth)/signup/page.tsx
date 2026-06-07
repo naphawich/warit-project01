@@ -315,14 +315,16 @@ export default function SignupPage() {
           >
             ฉันยอมรับ{" "}
             <Link
-              href="#"
+              href="/terms"
+              target="_blank"
               className="text-brand-700 hover:underline font-medium"
             >
               เงื่อนไขการใช้งาน
             </Link>{" "}
             และ{" "}
             <Link
-              href="#"
+              href="/privacy"
+              target="_blank"
               className="text-brand-700 hover:underline font-medium"
             >
               นโยบายความเป็นส่วนตัว

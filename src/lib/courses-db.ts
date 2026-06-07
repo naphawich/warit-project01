@@ -75,11 +75,16 @@ export async function loadCourseById(
 ): Promise<Course | null> {
   const fromStatic = staticCourses.find((c) => c.id === id);
   if (fromStatic) return fromStatic;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("courses")
     .select("*")
     .eq("id", id)
     .maybeSingle();
+  // Surface real DB errors (timeout/permission) instead of silently treating
+  // them as "course not found".
+  if (error) {
+    console.error("[loadCourseById] query failed", id, error.message);
+  }
   return data ? dbRowToCourse(data as DBCourseRow) : null;
 }
 

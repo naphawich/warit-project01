@@ -26,6 +26,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetMsg, setResetMsg] = useState<string | null>(null);
   const [nextParam, setNextParam] = useState("");
 
   useEffect(() => {
@@ -59,6 +60,24 @@ export default function LoginPage() {
     router.refresh();
   };
 
+  const handleForgotPassword = async () => {
+    setError(null);
+    setResetMsg(null);
+    if (!email) {
+      setError('กรุณากรอกอีเมลก่อน แล้วกด "ลืมรหัสผ่าน?" อีกครั้ง');
+      return;
+    }
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      email,
+      { redirectTo: `${window.location.origin}/reset-password` }
+    );
+    if (resetError) {
+      setError(translateAuthError(resetError.message));
+      return;
+    }
+    setResetMsg("ส่งลิงก์รีเซ็ตรหัสผ่านไปที่อีเมลของคุณแล้ว กรุณาตรวจกล่องจดหมาย");
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -80,6 +99,13 @@ export default function LoginPage() {
         <div className="mb-5 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {resetMsg && (
+        <div className="mb-5 flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <span>{resetMsg}</span>
         </div>
       )}
 
@@ -108,9 +134,14 @@ export default function LoginPage() {
             <Label htmlFor="password" className="text-slate-700">
               รหัสผ่าน
             </Label>
-            <span className="text-sm text-slate-400 font-medium">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={loading}
+              className="text-sm text-brand-700 hover:underline font-medium disabled:opacity-50"
+            >
               ลืมรหัสผ่าน?
-            </span>
+            </button>
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />

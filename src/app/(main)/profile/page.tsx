@@ -303,7 +303,7 @@ export default function ProfilePage() {
                   สำรวจคอร์สเพิ่มเติม
                 </h3>
                 <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-                  ดู 9 คอร์สคุณภาพสูงในแคตตาล็อกของเรา
+                  ดูคอร์สคุณภาพสูงทั้งหมดในแคตตาล็อกของเรา
                 </p>
                 <Button
                   render={<Link href="/courses" />}

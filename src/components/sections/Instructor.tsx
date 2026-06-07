@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { User, CheckCircle2, Globe } from "lucide-react";
 import { LinkedinIcon, TwitterIcon } from "@/components/icons/SocialIcons";
@@ -127,7 +128,11 @@ export function Instructor() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button className="bg-brand-700 hover:bg-brand-800 text-white">
+              <Button
+                render={<Link href="/courses" />}
+                nativeButton={false}
+                className="bg-brand-700 hover:bg-brand-800 text-white"
+              >
                 ดูคอร์สของผู้สอน
               </Button>
               <div className="flex items-center gap-2 ml-2">

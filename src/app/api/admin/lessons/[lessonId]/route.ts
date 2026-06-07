@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { authenticateAdmin } from "@/lib/admin-server";
 import { deleteObject } from "@/lib/r2-server";
+import { repackGlobalIndex } from "@/lib/lesson-index";
 
 export const runtime = "nodejs";
 
@@ -131,6 +132,10 @@ export async function DELETE(
       .update({ lesson_index: s.lesson_index - 1 })
       .eq("id", s.id);
   }
+
+  // Re-pack global_index across the whole course so lesson numbers shown on the
+  // learn page stay contiguous (1-based, matching the create convention).
+  await repackGlobalIndex(admin, lesson.course_id);
 
   return NextResponse.json({ ok: true });
 }

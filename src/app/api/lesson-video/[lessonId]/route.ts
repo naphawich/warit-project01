@@ -72,7 +72,13 @@ export async function GET(
     }
   }
 
-  const url = await presignDownloadUrl(lesson.video_storage_key, 60 * 60);
+  let url: string;
+  try {
+    url = await presignDownloadUrl(lesson.video_storage_key, 60 * 60);
+  } catch (e) {
+    console.error("[lesson-video] presign failed", e);
+    return NextResponse.json({ error: "presign_failed" }, { status: 502 });
+  }
   return NextResponse.json({
     url,
     // Hint to the client when to refetch (slightly before expiry)

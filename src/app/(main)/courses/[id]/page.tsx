@@ -219,6 +219,8 @@ export default async function CoursePage({
                 </div>
                 <Button
                   variant="outline"
+                  render={<Link href="/#instructor" />}
+                  nativeButton={false}
                   className="border-brand-200 text-brand-700 hover:bg-brand-50 hidden sm:inline-flex"
                 >
                   ดูประวัติ

@@ -260,7 +260,7 @@ export const courses: Course[] = [
       "เริ่มต้นสาย Data Science ด้วย Python เรียนรู้การวิเคราะห์ข้อมูลและสร้างโมเดล ML จริง",
     longDescription:
       "คอร์สสำหรับผู้ที่อยากเริ่มอาชีพ Data Scientist หรือ ML Engineer เริ่มจากพื้นฐาน Python, NumPy, Pandas, Visualization จนถึงการสร้างโมเดล Machine Learning ด้วย Scikit-learn และ Deep Learning เบื้องต้นด้วย PyTorch พร้อม Case Study จริง",
-    category: "การพัฒนาเว็บไซต์",
+    category: "วิทยาศาสตร์ข้อมูล",
     level: "ระดับสูง",
     lessons: 78,
     hours: 45,
