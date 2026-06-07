@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    # Dummy values so the env-presence checks in the server modules pass during
+    # `next build`. CI never calls the real services — it only compiles and runs
+    # unit tests. Real secrets live only in Vercel.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://ci.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
+      SUPABASE_SERVICE_ROLE_KEY: ci_service_role
+      NEXT_PUBLIC_OMISE_PUBLIC_KEY: pkey_test_ci
+      OMISE_SECRET_KEY: skey_test_ci
+      RESEND_API_KEY: re_ci
+      R2_ACCOUNT_ID: ci_account
+      R2_ACCESS_KEY_ID: ci_access
+      R2_SECRET_ACCESS_KEY: ci_secret
+      R2_BUCKET: ci-bucket
+      NEXT_PUBLIC_SITE_URL: https://ci.example.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build
