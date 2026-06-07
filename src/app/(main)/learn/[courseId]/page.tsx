@@ -68,6 +68,11 @@ export default function LearnPage() {
   );
   useEffect(() => {
     if (course !== undefined) return;
+    // Non-numeric route param (e.g. /learn/abc) -> treat as not found.
+    if (!Number.isFinite(numericId)) {
+      setCourse(null);
+      return;
+    }
     let active = true;
     (async () => {
       const found = await loadCourseById(catalog, supabase, numericId);
@@ -327,6 +332,17 @@ export default function LearnPage() {
 
   if (!owned) {
     return <NotOwnedState courseId={course.id} title={course.title} />;
+  }
+
+  // A DB course can exist with chapters but no lessons yet. Guard against an
+  // empty curriculum so we don't crash on activeLesson.id below.
+  if (lessons.length === 0) {
+    return (
+      <NotFoundState
+        title="คอร์สนี้ยังไม่มีบทเรียน"
+        message="ผู้สอนกำลังเตรียมเนื้อหา กรุณากลับมาใหม่อีกครั้ง"
+      />
+    );
   }
 
   const activeLesson = lessons[activeLessonIdx] ?? lessons[0];
