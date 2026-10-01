@@ -674,7 +674,7 @@ export default function LearnPage() {
                         เรียนจบทุกบทแล้ว!
                       </div>
                       <p className="text-slate-600 text-xs leading-relaxed">
-                        ใบประกาศนียบัตรของคุณกำลังจัดส่งทางอีเมล
+                        ย้อนดูบทที่ยังไม่มั่นใจได้ตลอด หรือไปต่อคอร์สถัดไปได้เลย
                       </p>
                     </div>
                   </div>

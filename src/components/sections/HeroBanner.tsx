@@ -31,22 +31,23 @@ export function HeroBanner() {
           >
             <Badge className="w-fit bg-gold-100 text-gold-900 hover:bg-gold-100 border border-gold-300 px-3 py-1.5">
               <Sparkles className="h-3.5 w-3.5 mr-1.5 text-gold-600" />
-              คอร์สใหม่ล่าสุด พร้อมโปรโมชั่นพิเศษ
+              ติวชีวะ ม.ปลาย ออนไลน์ กับครูวริศ
             </Badge>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 leading-tight">
-              เรียนรู้ทักษะใหม่
+              เข้าใจชีวะ ม.ปลาย
               <br />
-              ก้าวสู่{" "}
+              พร้อมพิชิต{" "}
               <span className="relative inline-block">
-                <span className="relative z-10 text-brand-700">มืออาชีพ</span>
+                <span className="relative z-10 text-brand-700">A-Level</span>
                 <span className="absolute bottom-1 left-0 right-0 h-3 bg-gold-300/70 -z-0" />
               </span>
             </h1>
 
             <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
-              แพลตฟอร์มคอร์สเรียนออนไลน์คุณภาพสูง สอนโดยผู้เชี่ยวชาญตัวจริง
-              เรียนได้ทุกที่ทุกเวลา พร้อมใบประกาศนียบัตรหลังเรียนจบ
+              สรุปครบทุกบท ม.4–6 เน้นเข้าใจ ไม่ต้องท่องจำ
+              พร้อมตะลุยโจทย์จริงกับ
+              <span className="whitespace-nowrap">ครูวริศ</span>
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -73,16 +74,16 @@ export function HeroBanner() {
 
             <div className="flex items-center gap-8 pt-6 border-t border-slate-200/70">
               <div>
-                <div className="text-2xl font-bold text-slate-900">10K+</div>
-                <div className="text-sm text-slate-500">ผู้เรียน</div>
+                <div className="text-2xl font-bold text-slate-900">ม.4–6</div>
+                <div className="text-sm text-slate-500">ครบทุกบท</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-slate-900">50+</div>
-                <div className="text-sm text-slate-500">คอร์ส</div>
+                <div className="text-2xl font-bold text-slate-900">A-Level</div>
+                <div className="text-sm text-slate-500">ตะลุยโจทย์</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-slate-900">4.9★</div>
-                <div className="text-sm text-slate-500">คะแนนรีวิว</div>
+                <div className="text-2xl font-bold text-slate-900">สอวน.</div>
+                <div className="text-sm text-slate-500">ค่าย 2 มช.</div>
               </div>
             </div>
           </motion.div>
@@ -116,9 +117,9 @@ export function HeroBanner() {
                   <Sparkles className="h-5 w-5 text-gold-600" />
                 </div>
                 <div>
-                  <div className="text-xs text-slate-500">เรียนจบแล้ว</div>
+                  <div className="text-xs text-slate-500">เรียนแบบเห็นภาพ</div>
                   <div className="font-semibold text-slate-900 text-sm">
-                    +1,240 คน วันนี้
+                    เข้าใจ ไม่ต้องท่องจำ
                   </div>
                 </div>
               </motion.div>
@@ -133,9 +134,9 @@ export function HeroBanner() {
                   ✓
                 </div>
                 <div>
-                  <div className="text-xs text-slate-500">ใบประกาศ</div>
+                  <div className="text-xs text-slate-500">เนื้อหาครบ</div>
                   <div className="font-semibold text-slate-900 text-sm">
-                    ออกให้ทุกคอร์ส
+                    ตามหลักสูตร สสวท.
                   </div>
                 </div>
               </motion.div>

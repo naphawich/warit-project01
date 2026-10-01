@@ -108,9 +108,12 @@ export default async function CoursePage({
 
   const previewSource = await loadPreviewSource(course.id);
 
-  const discount = Math.round(
-    ((course.originalPrice - course.price) / course.originalPrice) * 100
-  );
+  const discount =
+    course.originalPrice > course.price
+      ? Math.round(
+          ((course.originalPrice - course.price) / course.originalPrice) * 100
+        )
+      : 0;
 
   return (
     <div>
@@ -163,19 +166,23 @@ export default async function CoursePage({
 
               {/* Stats */}
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <Star className="h-4 w-4 fill-gold-400 text-gold-400" />
-                  <span className="font-semibold text-slate-900">
-                    {course.rating}
-                  </span>
-                  <span className="text-slate-500">
-                    ({course.reviewsCount.toLocaleString()} รีวิว)
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <Users className="h-4 w-4" />
-                  <span>{course.students.toLocaleString()} ผู้เรียน</span>
-                </div>
+                {course.rating > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Star className="h-4 w-4 fill-gold-400 text-gold-400" />
+                    <span className="font-semibold text-slate-900">
+                      {course.rating}
+                    </span>
+                    <span className="text-slate-500">
+                      ({course.reviewsCount.toLocaleString()} รีวิว)
+                    </span>
+                  </div>
+                )}
+                {course.students > 0 && (
+                  <div className="flex items-center gap-1.5 text-slate-600">
+                    <Users className="h-4 w-4" />
+                    <span>{course.students.toLocaleString()} ผู้เรียน</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 text-slate-600">
                   <BookOpen className="h-4 w-4" />
                   <span>{course.lessons} บทเรียน</span>
@@ -274,15 +281,21 @@ export default async function CoursePage({
                   <span className="text-3xl font-bold text-slate-900">
                     ฿{course.price.toLocaleString()}
                   </span>
-                  <span className="text-base text-slate-400 line-through mb-1">
-                    ฿{course.originalPrice.toLocaleString()}
-                  </span>
+                  {discount > 0 && (
+                    <span className="text-base text-slate-400 line-through mb-1">
+                      ฿{course.originalPrice.toLocaleString()}
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center gap-2 mb-5">
-                  <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-0">
-                    ลด {discount}%
-                  </Badge>
-                </div>
+                {discount > 0 ? (
+                  <div className="flex items-center gap-2 mb-5">
+                    <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-0">
+                      ลด {discount}%
+                    </Badge>
+                  </div>
+                ) : (
+                  <div className="mb-5" />
+                )}
 
                 <CourseActions
                   item={{
@@ -315,9 +328,6 @@ export default async function CoursePage({
                   </ul>
                 </div>
 
-                <p className="mt-5 text-center text-xs text-slate-500">
-                  รับประกันคืนเงิน 14 วัน หากไม่พอใจ
-                </p>
               </div>
             </div>
           </aside>

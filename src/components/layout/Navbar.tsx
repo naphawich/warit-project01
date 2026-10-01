@@ -16,6 +16,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { useCart } from "@/lib/cart-store";
+import { reviews } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import { useUser, getInitials } from "@/lib/use-user";
 import {
@@ -30,7 +31,7 @@ const navItems = [
   { label: "หน้าแรก", href: "/" },
   { label: "คอร์สเรียน", href: "/courses" },
   { label: "ผู้สอน", href: "/#instructor" },
-  { label: "รีวิว", href: "/#reviews" },
+  ...(reviews.length > 0 ? [{ label: "รีวิว", href: "/#reviews" }] : []),
   { label: "คำถามที่พบบ่อย", href: "/#faq" },
 ];
 
@@ -80,7 +81,7 @@ export function Navbar() {
               <GraduationCap className="h-5 w-5" />
             </div>
             <span className="text-lg font-semibold tracking-tight text-slate-900">
-              Warit<span className="text-brand-700">Academy</span>
+              Warit<span className="text-brand-700">Biology</span>
             </span>
           </Link>
 

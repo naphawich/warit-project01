@@ -5,6 +5,7 @@ import {
   InstagramIcon,
   YoutubeIcon,
 } from "@/components/icons/SocialIcons";
+import { reviews } from "@/lib/data";
 
 export function Footer() {
   return (
@@ -17,12 +18,12 @@ export function Footer() {
                 <GraduationCap className="h-5 w-5" />
               </div>
               <span className="text-lg font-semibold text-white">
-                Warit<span className="text-gold-300">Academy</span>
+                Warit<span className="text-gold-300">Biology</span>
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-brand-200/70">
-              แพลตฟอร์มเรียนออนไลน์คุณภาพสูง
-              สำหรับผู้ที่ต้องการพัฒนาทักษะอย่างมืออาชีพ
+              ติวชีววิทยา ม.4–6 ออนไลน์ เน้นเข้าใจ ไม่ต้องท่องจำ
+              พร้อมตะลุยโจทย์ A-Level กับครูวริศ
             </p>
             <div className="flex gap-3 mt-5">
               {[
@@ -49,7 +50,9 @@ export function Footer() {
                 { label: "หน้าแรก", href: "/" },
                 { label: "คอร์สเรียน", href: "/courses" },
                 { label: "ผู้สอน", href: "/#instructor" },
-                { label: "รีวิว", href: "/#reviews" },
+                ...(reviews.length > 0
+                  ? [{ label: "รีวิว", href: "/#reviews" }]
+                  : []),
                 { label: "คำถามที่พบบ่อย", href: "/#faq" },
               ].map((item) => (
                 <li key={item.href}>
@@ -65,14 +68,13 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">หมวดหมู่</h4>
+            <h4 className="text-white font-semibold mb-4">คอร์สเรียน</h4>
             <ul className="space-y-2 text-sm">
               {[
-                "การออกแบบ",
-                "การพัฒนาเว็บไซต์",
-                "การตลาดดิจิทัล",
-                "ภาษาอังกฤษ",
-                "ธุรกิจและการลงทุน",
+                "ชีววิทยา ม.4",
+                "ชีววิทยา ม.5",
+                "ชีววิทยา ม.6",
+                "ตะลุยโจทย์ A-Level",
               ].map((cat) => (
                 <li key={cat}>
                   <Link
@@ -106,7 +108,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-brand-200/60">
-          <p>© {new Date().getFullYear()} Warit Academy. สงวนลิขสิทธิ์ทุกประการ</p>
+          <p>© {new Date().getFullYear()} Warit Biology. สงวนลิขสิทธิ์ทุกประการ</p>
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-gold-300 transition-colors">
               นโยบายความเป็นส่วนตัว

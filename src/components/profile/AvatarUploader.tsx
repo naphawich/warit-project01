@@ -153,7 +153,7 @@ export function AvatarUploader({ displayName, email }: Props) {
 
       <div className="flex-1 min-w-0">
         <div className="text-xs uppercase tracking-wider text-brand-100/80 mb-1">
-          สมาชิก Warit Academy
+          สมาชิก Warit Biology
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold mb-1">{displayName}</h1>
         <div className="text-sm text-brand-100/90 truncate">{email}</div>

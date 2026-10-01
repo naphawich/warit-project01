@@ -47,7 +47,7 @@ export function ReceiptEmail({
   return (
     <Html lang="th">
       <Head />
-      <Preview>ใบเสร็จคำสั่งซื้อจาก Warit Academy</Preview>
+      <Preview>ใบเสร็จคำสั่งซื้อจาก Warit Biology</Preview>
       <Tailwind>
         <Body className="bg-slate-50 font-sans py-10">
           <Container className="bg-white rounded-2xl mx-auto max-w-xl border border-slate-200 overflow-hidden">
@@ -55,7 +55,7 @@ export function ReceiptEmail({
             <Section className="bg-[#015639] px-8 py-10 text-center">
               <Img
                 src="https://api.dicebear.com/9.x/icons/png?icon=graduation-cap&backgroundColor=ffffff&backgroundType=solid&radius=50&size=64"
-                alt="Warit Academy"
+                alt="Warit Biology"
                 width="56"
                 height="56"
                 className="mx-auto mb-4 rounded-2xl"
@@ -64,7 +64,7 @@ export function ReceiptEmail({
                 ชำระเงินสำเร็จ 🎉
               </Heading>
               <Text className="text-[#B5EDD0] m-0 text-sm">
-                ขอบคุณที่ร่วมเรียนกับ Warit Academy
+                ขอบคุณที่ร่วมเรียนกับ Warit Biology
               </Text>
             </Section>
 
@@ -175,7 +175,7 @@ export function ReceiptEmail({
             {/* Footer */}
             <Section className="px-8 py-6">
               <Text className="text-slate-500 text-xs leading-5 m-0 text-center">
-                Warit Academy — แพลตฟอร์มเรียนออนไลน์คุณภาพสูง
+                Warit Biology — แพลตฟอร์มเรียนออนไลน์คุณภาพสูง
                 <br />
                 เก็บอีเมลนี้ไว้เป็นหลักฐานการชำระเงิน
               </Text>

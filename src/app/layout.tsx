@@ -9,9 +9,9 @@ const prompt = Prompt({
 });
 
 export const metadata: Metadata = {
-  title: "Warit Academy — เรียนคอร์สออนไลน์คุณภาพสูง",
+  title: "Warit Biology — ติวชีวะ ม.ปลาย ออนไลน์ กับครูวริศ",
   description:
-    "แพลตฟอร์มคอร์สเรียนออนไลน์โดยผู้สอนมืออาชีพ เรียนได้ทุกที่ทุกเวลา พร้อมใบประกาศนียบัตร",
+    "คอร์สชีววิทยา ม.4–6 ครบทุกบท เน้นเข้าใจ ไม่ต้องท่องจำ พร้อมตะลุยโจทย์ A-Level กับครูวริศ ฤทธิ์มานะ",
 };
 
 export default function RootLayout({

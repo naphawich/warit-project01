@@ -19,7 +19,6 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart-store";
 import { useUser } from "@/lib/use-user";
 import { supabase } from "@/lib/supabase";
@@ -169,9 +168,11 @@ export default function CartPage() {
                             <span className="text-lg font-bold text-brand-700">
                               ฿{item.price.toLocaleString()}
                             </span>
-                            <span className="text-xs text-slate-400 line-through">
-                              ฿{item.originalPrice.toLocaleString()}
-                            </span>
+                            {item.originalPrice > item.price && (
+                              <span className="text-xs text-slate-400 line-through">
+                                ฿{item.originalPrice.toLocaleString()}
+                              </span>
+                            )}
                           </div>
                           <button
                             onClick={() => removeItem(item.id)}
@@ -297,9 +298,6 @@ function EmptyCart() {
         ยังไม่มีคอร์สในตะกร้า ไปเลือกคอร์สที่คุณสนใจได้เลย
         เริ่มต้นเส้นทางการเรียนรู้ของคุณวันนี้
     </p>
-      <Badge className="bg-brand-100 text-brand-800 hover:bg-brand-100 border-0 mb-8">
-        🎉 มีโปรโมชั่นพิเศษวันนี้
-      </Badge>
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Button
           render={<Link href="/#courses" />}

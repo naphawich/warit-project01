@@ -11,9 +11,9 @@ import {
 const apiKey = process.env.RESEND_API_KEY;
 
 // Default sender. Once you verify a custom domain in Resend, set
-// EMAIL_FROM in the environment to e.g. "Warit Academy <noreply@your-domain.com>".
+// EMAIL_FROM in the environment to e.g. "Warit Biology <noreply@your-domain.com>".
 const fromAddress =
-  process.env.EMAIL_FROM ?? "Warit Academy <onboarding@resend.dev>";
+  process.env.EMAIL_FROM ?? "Warit Biology <onboarding@resend.dev>";
 
 let client: Resend | null = null;
 function getClient(): Resend | null {
@@ -37,7 +37,7 @@ export async function sendReceiptEmail(args: SendReceiptArgs): Promise<void> {
     const { error } = await resend.emails.send({
       from: fromAddress,
       to: args.to,
-      subject: `ใบเสร็จคำสั่งซื้อ #${args.orderId.slice(0, 8)} — Warit Academy`,
+      subject: `ใบเสร็จคำสั่งซื้อ #${args.orderId.slice(0, 8)} — Warit Biology`,
       html,
     });
     if (error) {

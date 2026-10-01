@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { reviews } from "@/lib/data";
 
 export function Reviews() {
+  if (reviews.length === 0) return null;
+
   return (
     <section
       id="reviews"
@@ -27,7 +29,7 @@ export function Reviews() {
             เสียงตอบรับจากผู้เรียนจริง
           </h2>
           <p className="text-slate-600">
-            ผู้เรียนกว่า 10,000 คน ที่ได้พัฒนาตนเองและประสบความสำเร็จไปกับเรา
+            ความเห็นจากนักเรียนที่เรียนชีวะกับครูวริศ
           </p>
         </motion.div>
 

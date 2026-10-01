@@ -32,26 +32,26 @@ export default function AuthLayout({
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md border border-white/20">
               <GraduationCap className="h-5 w-5" />
             </div>
-            <span className="text-xl font-semibold">Warit Academy</span>
+            <span className="text-xl font-semibold">Warit Biology</span>
           </Link>
         </div>
 
         <div className="relative">
           <h2 className="text-4xl font-bold leading-tight mb-4">
-            เริ่มต้นเส้นทาง
+            เข้าใจชีวะ ม.ปลาย
             <br />
-            สู่ความเป็นมืออาชีพ
+            พร้อมพิชิต A-Level
           </h2>
           <p className="text-brand-100/90 text-lg leading-relaxed mb-10 max-w-md">
-            เข้าร่วมกับผู้เรียนกว่า 10,000 คน
-            ที่ได้พัฒนาทักษะและประสบความสำเร็จไปกับเรา
+            สมัครสมาชิกแล้วเริ่มเรียนชีววิทยากับครูวริศ
+            ได้ทุกที่ ทุกเวลา
           </p>
 
           <div className="space-y-4">
             {[
-              { icon: Sparkles, text: "คอร์สคุณภาพสูง สอนโดยผู้เชี่ยวชาญ" },
-              { icon: Award, text: "ใบประกาศนียบัตรหลังเรียนจบ" },
-              { icon: ShieldCheck, text: "เรียนได้ตลอดชีพ พร้อมอัปเดตฟรี" },
+              { icon: Sparkles, text: "เน้นเข้าใจ ไม่ต้องท่องจำ" },
+              { icon: Award, text: "ครบทุกบท ม.4–6 ตามหลักสูตร สสวท." },
+              { icon: ShieldCheck, text: "ซื้อครั้งเดียว ดูซ้ำได้ตลอดชีพ" },
             ].map((item) => (
               <div key={item.text} className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex-shrink-0">
@@ -64,7 +64,7 @@ export default function AuthLayout({
         </div>
 
         <div className="relative text-sm text-brand-100/70">
-          © {new Date().getFullYear()} Warit Academy. สงวนลิขสิทธิ์
+          © {new Date().getFullYear()} Warit Biology. สงวนลิขสิทธิ์
         </div>
       </div>
 
@@ -82,7 +82,7 @@ export default function AuthLayout({
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-700 text-white">
               <GraduationCap className="h-4 w-4" />
             </div>
-            <span className="font-semibold text-slate-900">Warit Academy</span>
+            <span className="font-semibold text-slate-900">Warit Biology</span>
           </Link>
         </div>
 

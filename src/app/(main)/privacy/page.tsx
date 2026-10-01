@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
 export const metadata = {
-  title: "นโยบายความเป็นส่วนตัว | Warit Academy",
+  title: "นโยบายความเป็นส่วนตัว | Warit Biology",
 };
 
 export default function PrivacyPage() {
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
               1. ข้อมูลที่เราเก็บรวบรวม
             </h2>
             <p>
-              Warit Academy เก็บรวบรวมข้อมูลส่วนบุคคลเท่าที่จำเป็นเพื่อให้บริการ ได้แก่
+              Warit Biology เก็บรวบรวมข้อมูลส่วนบุคคลเท่าที่จำเป็นเพื่อให้บริการ ได้แก่
               ชื่อ–นามสกุล อีเมล รูปโปรไฟล์ (หากอัปโหลด) ประวัติการสั่งซื้อคอร์ส
               และความคืบหน้าในการเรียน เราไม่เก็บข้อมูลบัตรเครดิตหรือบัญชีธนาคารของท่าน
               ข้อมูลการชำระเงินทั้งหมดดำเนินการโดยผู้ให้บริการชำระเงิน (Omise/Opn Payments)

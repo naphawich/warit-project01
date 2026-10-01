@@ -26,10 +26,9 @@ import {
 import { courses as staticCatalog } from "@/lib/data";
 
 const DEFAULT_FEATURES = [
-  "เรียนได้ตลอดชีพ",
-  "ใบประกาศนียบัตร",
-  "เข้าถึงได้ทุกอุปกรณ์",
-  "กลุ่มผู้เรียนสำหรับถาม-ตอบ",
+  "เข้าเรียนได้ตลอดชีพ",
+  "ดูซ้ำได้ไม่จำกัด",
+  "เรียนได้ทุกอุปกรณ์",
 ];
 
 function deriveInitials(name: string): string {
@@ -57,7 +56,7 @@ export default function NewCoursePage() {
   const [lessons, setLessons] = useState<number | "">(20);
   const [hours, setHours] = useState<number | "">(10);
   const [price, setPrice] = useState<number | "">(1990);
-  const [originalPrice, setOriginalPrice] = useState<number | "">(2990);
+  const [originalPrice, setOriginalPrice] = useState<number | "">(1990);
   const [color, setColor] = useState(COURSE_COLOR_PRESETS[0].value);
   const [instructorName, setInstructorName] = useState("");
   const [instructorRole, setInstructorRole] = useState("");

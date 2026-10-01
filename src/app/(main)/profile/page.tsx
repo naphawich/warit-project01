@@ -290,11 +290,10 @@ export default function ProfilePage() {
                 <div className="space-y-3 text-sm">
                   <Stat label="คอร์สที่เรียน" value={ownedIds === null ? "-" : String(ownedIds.size)} />
                   <Stat label="ชั่วโมงเรียน" value="-" />
-                  <Stat label="ใบประกาศ" value="-" />
                 </div>
                 <p className="mt-4 text-xs text-slate-500 leading-relaxed">
                   เริ่มเรียนคอร์สแรกของคุณ
-                  เพื่อสะสมความก้าวหน้าและใบประกาศนียบัตร
+                  เพื่อติดตามความก้าวหน้าในการเรียน
                 </p>
               </section>
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
 export const metadata = {
-  title: "เงื่อนไขการใช้งาน | Warit Academy",
+  title: "เงื่อนไขการใช้งาน | Warit Biology",
 };
 
 export default function TermsPage() {
@@ -34,7 +34,7 @@ export default function TermsPage() {
               1. การยอมรับเงื่อนไข
             </h2>
             <p>
-              การสมัครสมาชิกหรือใช้งาน Warit Academy ถือว่าท่านยอมรับเงื่อนไขการใช้งานฉบับนี้
+              การสมัครสมาชิกหรือใช้งาน Warit Biology ถือว่าท่านยอมรับเงื่อนไขการใช้งานฉบับนี้
               หากท่านไม่เห็นด้วย โปรดงดใช้บริการ
             </p>
           </section>

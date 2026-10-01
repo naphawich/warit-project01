@@ -138,11 +138,11 @@ export default function CoursesPage() {
             คอร์สเรียนทั้งหมด
           </Badge>
           <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3">
-            ค้นพบคอร์สที่ใช่สำหรับคุณ
+            คอร์สชีววิทยาทั้งหมด
           </h1>
           <p className="text-slate-600 leading-relaxed">
-            เลือกจาก {courses.length} คอร์สคุณภาพสูง ครอบคลุมหลากหลายหมวดหมู่
-            สอนโดยผู้เชี่ยวชาญตัวจริง
+            {courses.length} คอร์ส ครอบคลุมชีววิทยา ม.4–6 ทุกบท
+            และตะลุยโจทย์ A-Level สอนโดยครูวริศ
           </p>
         </div>
 
@@ -363,20 +363,26 @@ export default function CoursesPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between text-sm pt-3 border-t border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1 text-gold-500">
-                            <Star className="h-4 w-4 fill-current" />
-                            <span className="font-semibold text-slate-700">
-                              {course.rating}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 text-slate-500">
-                            <Users className="h-4 w-4" />
-                            <span>{course.students.toLocaleString()}</span>
+                      {(course.rating > 0 || course.students > 0) && (
+                        <div className="flex items-center justify-between text-sm pt-3 border-t border-slate-100">
+                          <div className="flex items-center gap-3">
+                            {course.rating > 0 && (
+                              <div className="flex items-center gap-1 text-gold-500">
+                                <Star className="h-4 w-4 fill-current" />
+                                <span className="font-semibold text-slate-700">
+                                  {course.rating}
+                                </span>
+                              </div>
+                            )}
+                            {course.students > 0 && (
+                              <div className="flex items-center gap-1 text-slate-500">
+                                <Users className="h-4 w-4" />
+                                <span>{course.students.toLocaleString()}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </div>
+                      )}
 
                       <div className="flex items-end justify-between pt-2">
                         {isOwned ? (
@@ -386,9 +392,11 @@ export default function CoursesPage() {
                           </div>
                         ) : (
                           <div>
-                            <div className="text-xs text-slate-400 line-through">
-                              ฿{course.originalPrice.toLocaleString()}
-                            </div>
+                            {course.originalPrice > course.price && (
+                              <div className="text-xs text-slate-400 line-through">
+                                ฿{course.originalPrice.toLocaleString()}
+                              </div>
+                            )}
                             <div className="text-xl font-bold text-brand-700">
                               ฿{course.price.toLocaleString()}
                             </div>

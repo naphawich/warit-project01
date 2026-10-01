@@ -72,9 +72,9 @@ export function Instructor() {
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-brand-600" />
                   <div>
-                    <div className="text-xs text-slate-500">ได้รับการรับรอง</div>
+                    <div className="text-xs text-slate-500">ผ่านการอบรม</div>
                     <div className="font-semibold text-sm text-slate-900">
-                      Verified Instructor
+                      สอวน. ชีววิทยา ค่าย 2
                     </div>
                   </div>
                 </div>
