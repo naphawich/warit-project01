@@ -3,8 +3,19 @@
 # Warit Academy — Project Brief for Claude/Agents
 
 Online course platform (Thai). Students sign up → buy with PromptPay → watch
-videos. Admins create courses → upload videos. Blue/white theme. Instructor
-persona: "วริศ ฤทธิ์มานะ" (biology tutor).
+videos. Admins create courses → upload videos. Instructor persona:
+"วริศ ฤทธิ์มานะ" (biology tutor).
+
+**Theme: deep green + gold** (tokens in `src/app/globals.css`). Use the
+`brand-*` scale (50–950, primary `brand-700` = `#015639`) — never raw
+`blue-*`/`emerald-*` for brand UI. `gold-*` is a 10% accent only (badges,
+rating stars, highlights); text on gold is `gold-900`/`brand-900`, never white.
+One page background `#F7FBF9` site-wide — sections stay transparent (no
+per-section gradients), cards are `bg-white`. Footer = `brand-900`.
+Course thumbnail gradients come from `COURSE_COLOR_PRESETS`; old blue values
+in DB/cart are remapped by `normalizeCourseColor()`. `emerald` = success state,
+`amber` = warning state. React-email templates can't see our tokens → use
+arbitrary hex (`bg-[#015639]`).
 
 - **Live:** https://warit-project01.vercel.app
 - **Repo:** github.com/naphawich/warit-project01 (PUBLIC — never commit secrets here)
