@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { ArrowRight, PlayCircle, User, Sparkles } from "lucide-react";
+import { ArrowRight, PlayCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -96,15 +97,15 @@ export function HeroBanner() {
           >
             <div className="relative aspect-square max-w-lg mx-auto">
               <div className="absolute inset-0 bg-gradient-to-br from-brand-500 to-brand-800 rounded-3xl rotate-6 opacity-20" />
-              <div className="absolute inset-0 bg-gradient-to-br from-brand-100 to-brand-200 rounded-3xl" />
-
-              <div className="relative h-full flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3 text-brand-700/40">
-                  <User className="h-32 w-32" strokeWidth={1} />
-                  <span className="text-sm font-medium">
-                    [ พื้นที่สำหรับรูปภาพ ]
-                  </span>
-                </div>
+              <div className="absolute inset-0 rounded-3xl overflow-hidden bg-brand-100">
+                <Image
+                  src="/hero-warit.jpg"
+                  alt="ครูวริศ ฤทธิ์มานะ (พี่ปลื้ม) ติวเตอร์ชีววิทยา ม.ปลาย"
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 512px, 90vw"
+                  className="object-cover"
+                />
               </div>
 
               <motion.div
