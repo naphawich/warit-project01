@@ -52,7 +52,7 @@ export function ReceiptEmail({
         <Body className="bg-slate-50 font-sans py-10">
           <Container className="bg-white rounded-2xl mx-auto max-w-xl border border-slate-200 overflow-hidden">
             {/* Header */}
-            <Section className="bg-gradient-to-br from-blue-700 to-blue-900 px-8 py-10 text-center">
+            <Section className="bg-[#015639] px-8 py-10 text-center">
               <Img
                 src="https://api.dicebear.com/9.x/icons/png?icon=graduation-cap&backgroundColor=ffffff&backgroundType=solid&radius=50&size=64"
                 alt="Warit Academy"
@@ -63,7 +63,7 @@ export function ReceiptEmail({
               <Heading className="text-white text-2xl font-bold m-0 mb-2">
                 ชำระเงินสำเร็จ 🎉
               </Heading>
-              <Text className="text-blue-100 m-0 text-sm">
+              <Text className="text-[#B5EDD0] m-0 text-sm">
                 ขอบคุณที่ร่วมเรียนกับ Warit Academy
               </Text>
             </Section>
@@ -124,7 +124,7 @@ export function ReceiptEmail({
                         </Text>
                         <Link
                           href={`${siteUrl}/learn/${item.course_id}`}
-                          className="text-blue-700 text-xs no-underline font-medium"
+                          className="text-[#015639] text-xs no-underline font-medium"
                         >
                           เริ่มเรียนทันที →
                         </Link>
@@ -152,7 +152,7 @@ export function ReceiptEmail({
                     </Text>
                   </td>
                   <td className="text-right">
-                    <Text className="text-blue-700 text-2xl font-bold m-0">
+                    <Text className="text-[#015639] text-2xl font-bold m-0">
                       {formatBaht(totalAmount)}
                     </Text>
                   </td>
@@ -164,7 +164,7 @@ export function ReceiptEmail({
             <Section className="px-8 py-6 text-center">
               <Link
                 href={`${siteUrl}/my-courses`}
-                className="bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold no-underline text-sm inline-block"
+                className="bg-[#015639] text-white px-6 py-3 rounded-lg font-semibold no-underline text-sm inline-block"
               >
                 ไปหน้าคอร์สของฉัน
               </Link>

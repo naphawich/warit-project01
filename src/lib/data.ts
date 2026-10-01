@@ -47,7 +47,7 @@ export const courses: Course[] = [
     reviewsCount: 312,
     price: 2990,
     originalPrice: 4990,
-    color: "from-blue-500 to-blue-700",
+    color: "from-brand-500 to-brand-800",
     instructor: {
       name: "อาจารย์วฤศ ใจดี",
       role: "Senior Designer, Warit Studio",
@@ -84,7 +84,7 @@ export const courses: Course[] = [
     reviewsCount: 241,
     price: 3990,
     originalPrice: 5990,
-    color: "from-indigo-500 to-indigo-700",
+    color: "from-emerald-600 to-brand-900",
     instructor: {
       name: "ภาคิน ตั้งใจ",
       role: "Tech Lead, Acme Corp.",
@@ -121,7 +121,7 @@ export const courses: Course[] = [
     reviewsCount: 580,
     price: 1990,
     originalPrice: 3490,
-    color: "from-sky-500 to-sky-700",
+    color: "from-teal-500 to-teal-800",
     instructor: {
       name: "ณัฐนิช มั่นคง",
       role: "Marketing Director, Brandlab",
@@ -158,7 +158,7 @@ export const courses: Course[] = [
     reviewsCount: 892,
     price: 2490,
     originalPrice: 3990,
-    color: "from-cyan-500 to-blue-600",
+    color: "from-teal-600 to-cyan-900",
     instructor: {
       name: "Sarah Williams",
       role: "Business English Coach",
@@ -195,7 +195,7 @@ export const courses: Course[] = [
     reviewsCount: 423,
     price: 2290,
     originalPrice: 3490,
-    color: "from-emerald-500 to-teal-700",
+    color: "from-emerald-500 to-emerald-800",
     instructor: {
       name: "ธีรพงษ์ ทรัพย์รวย",
       role: "นักวิเคราะห์การลงทุน CFA",
@@ -232,7 +232,7 @@ export const courses: Course[] = [
     reviewsCount: 654,
     price: 1490,
     originalPrice: 2490,
-    color: "from-rose-500 to-pink-700",
+    color: "from-green-600 to-brand-950",
     instructor: {
       name: "พิชญา รัตนพร",
       role: "Professional Photographer",
@@ -269,7 +269,7 @@ export const courses: Course[] = [
     reviewsCount: 198,
     price: 4990,
     originalPrice: 7990,
-    color: "from-violet-500 to-purple-700",
+    color: "from-brand-600 to-teal-900",
     instructor: {
       name: "Dr. กิตติพงษ์ เอกชัย",
       role: "AI Research Scientist",
@@ -306,7 +306,7 @@ export const courses: Course[] = [
     reviewsCount: 287,
     price: 3490,
     originalPrice: 5490,
-    color: "from-orange-500 to-red-600",
+    color: "from-gold-600 to-gold-800",
     instructor: {
       name: "ภาณุพงศ์ คมคาย",
       role: "Motion Designer",
@@ -343,7 +343,7 @@ export const courses: Course[] = [
     reviewsCount: 1120,
     price: 1290,
     originalPrice: 2290,
-    color: "from-lime-500 to-green-700",
+    color: "from-lime-600 to-green-800",
     instructor: {
       name: "ปวีณา สุขสมบูรณ์",
       role: "Excel MVP, Microsoft Certified",

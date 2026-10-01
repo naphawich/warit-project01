@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart-store";
 import { useUser } from "@/lib/use-user";
 import { supabase } from "@/lib/supabase";
+import { normalizeCourseColor } from "@/lib/courses-db";
 
 export default function CartPage() {
   const router = useRouter();
@@ -87,7 +88,7 @@ export default function CartPage() {
   const isEmpty = mounted && items.length === 0;
 
   return (
-    <div className="bg-gradient-to-b from-brand-50/40 via-white to-white min-h-[calc(100vh-4rem)]">
+    <div className="min-h-[calc(100vh-4rem)]">
       {/* Breadcrumb */}
       <div className="border-b border-slate-200/70 bg-white/60 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
@@ -141,7 +142,7 @@ export default function CartPage() {
                     <div className="flex gap-4">
                       <Link
                         href={`/courses/${item.id}`}
-                        className={`relative shrink-0 w-28 sm:w-40 aspect-video rounded-xl overflow-hidden bg-gradient-to-br ${item.color} flex items-center justify-center group`}
+                        className={`relative shrink-0 w-28 sm:w-40 aspect-video rounded-xl overflow-hidden bg-gradient-to-br ${normalizeCourseColor(item.color)} flex items-center justify-center group`}
                       >
                         <BookOpen
                           className="h-8 w-8 sm:h-10 sm:w-10 text-white/40 group-hover:scale-110 transition-transform"

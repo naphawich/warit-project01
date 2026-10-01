@@ -117,7 +117,7 @@ export default function CoursesPage() {
   };
 
   return (
-    <div className="bg-gradient-to-b from-brand-50/40 via-white to-white min-h-[calc(100vh-4rem)]">
+    <div className="min-h-[calc(100vh-4rem)]">
       {/* Breadcrumb */}
       <div className="border-b border-slate-200/70 bg-white/60 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
@@ -365,7 +365,7 @@ export default function CoursesPage() {
 
                       <div className="flex items-center justify-between text-sm pt-3 border-t border-slate-100">
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1 text-amber-500">
+                          <div className="flex items-center gap-1 text-gold-500">
                             <Star className="h-4 w-4 fill-current" />
                             <span className="font-semibold text-slate-700">
                               {course.rating}

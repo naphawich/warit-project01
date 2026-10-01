@@ -38,7 +38,7 @@ function validate(input: Partial<NewCourseInput>): {
       hours: Math.max(0, Math.floor(input.hours ?? 0)),
       price: Math.floor(input.price),
       original_price: Math.floor(input.original_price),
-      color: input.color?.trim() || "from-blue-500 to-blue-700",
+      color: input.color?.trim() || "from-brand-500 to-brand-800",
       instructor_name: input.instructor_name.trim(),
       instructor_role: (input.instructor_role ?? "").trim(),
       instructor_initials: (input.instructor_initials ?? "").trim(),

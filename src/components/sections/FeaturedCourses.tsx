@@ -9,7 +9,7 @@ import { courses } from "@/lib/data";
 
 export function FeaturedCourses() {
   return (
-    <section id="courses" className="py-20 lg:py-28 bg-white">
+    <section id="courses" className="py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -81,7 +81,7 @@ export function FeaturedCourses() {
 
                 <div className="flex items-center justify-between text-sm pt-3 border-t border-slate-100">
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 text-amber-500">
+                    <div className="flex items-center gap-1 text-gold-500">
                       <Star className="h-4 w-4 fill-current" />
                       <span className="font-semibold text-slate-700">
                         {course.rating}

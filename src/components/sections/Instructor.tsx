@@ -30,7 +30,7 @@ export function Instructor() {
   return (
     <section
       id="instructor"
-      className="py-20 lg:py-28 bg-gradient-to-br from-slate-50 to-brand-50/30"
+      className="py-20 lg:py-28"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center">

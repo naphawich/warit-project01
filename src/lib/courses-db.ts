@@ -40,7 +40,7 @@ export function dbRowToCourse(row: DBCourseRow): Course {
     reviewsCount: row.reviews_count,
     price: row.price,
     originalPrice: row.original_price,
-    color: row.color,
+    color: normalizeCourseColor(row.color),
     instructor: {
       name: row.instructor_name,
       role: row.instructor_role,
@@ -114,13 +114,32 @@ export const COURSE_LEVELS = [
 ] as const;
 
 export const COURSE_COLOR_PRESETS = [
-  { label: "น้ำเงิน", value: "from-blue-500 to-blue-700" },
-  { label: "คราม", value: "from-indigo-500 to-indigo-700" },
-  { label: "ฟ้า", value: "from-sky-500 to-sky-700" },
-  { label: "ฟ้าใส", value: "from-cyan-500 to-blue-600" },
-  { label: "เขียวมรกต", value: "from-emerald-500 to-teal-700" },
-  { label: "ชมพู", value: "from-rose-500 to-pink-700" },
-  { label: "ม่วง", value: "from-violet-500 to-purple-700" },
-  { label: "ส้ม", value: "from-orange-500 to-red-600" },
-  { label: "เขียวมะนาว", value: "from-lime-500 to-green-700" },
+  { label: "เขียวแบรนด์", value: "from-brand-500 to-brand-800" },
+  { label: "มรกตเข้ม", value: "from-emerald-600 to-brand-900" },
+  { label: "เขียวน้ำทะเล", value: "from-teal-500 to-teal-800" },
+  { label: "เขียวคราม", value: "from-teal-600 to-cyan-900" },
+  { label: "เขียวมรกต", value: "from-emerald-500 to-emerald-800" },
+  { label: "เขียวป่า", value: "from-green-600 to-brand-950" },
+  { label: "เขียวหยก", value: "from-brand-600 to-teal-900" },
+  { label: "ทอง", value: "from-gold-600 to-gold-800" },
+  { label: "เขียวมะกอก", value: "from-lime-600 to-green-800" },
 ];
+
+// Courses (and persisted cart items) saved before the green rebrand still
+// hold the old blue-era gradient strings — map each to its green
+// replacement on read so they match the current theme.
+const LEGACY_COURSE_COLORS: Record<string, string> = {
+  "from-blue-500 to-blue-700": "from-brand-500 to-brand-800",
+  "from-indigo-500 to-indigo-700": "from-emerald-600 to-brand-900",
+  "from-sky-500 to-sky-700": "from-teal-500 to-teal-800",
+  "from-cyan-500 to-blue-600": "from-teal-600 to-cyan-900",
+  "from-emerald-500 to-teal-700": "from-emerald-500 to-emerald-800",
+  "from-rose-500 to-pink-700": "from-green-600 to-brand-950",
+  "from-violet-500 to-purple-700": "from-brand-600 to-teal-900",
+  "from-orange-500 to-red-600": "from-gold-600 to-gold-800",
+  "from-lime-500 to-green-700": "from-lime-600 to-green-800",
+};
+
+export function normalizeCourseColor(color: string): string {
+  return LEGACY_COURSE_COLORS[color] ?? color;
+}

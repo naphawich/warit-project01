@@ -29,7 +29,7 @@ export default function GlobalError({
             style={{
               fontSize: 48,
               fontWeight: 700,
-              color: "#2e5aac",
+              color: "#015639",
               marginBottom: 8,
             }}
           >
@@ -48,7 +48,7 @@ export default function GlobalError({
             <button
               onClick={() => reset()}
               style={{
-                background: "#2e5aac",
+                background: "#015639",
                 color: "#fff",
                 border: "none",
                 borderRadius: 10,
@@ -64,8 +64,8 @@ export default function GlobalError({
               href="/"
               style={{
                 background: "#fff",
-                color: "#2e5aac",
-                border: "1px solid #c7d6f0",
+                color: "#015639",
+                border: "1px solid #B5EDD0",
                 borderRadius: 10,
                 padding: "10px 20px",
                 fontSize: 15,

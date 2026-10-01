@@ -113,7 +113,7 @@ export default async function CoursePage({
   );
 
   return (
-    <div className="bg-gradient-to-b from-brand-50/40 via-white to-white">
+    <div>
       {/* Breadcrumb */}
       <div className="border-b border-slate-200/70 bg-white/60 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
@@ -164,7 +164,7 @@ export default async function CoursePage({
               {/* Stats */}
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
                 <div className="flex items-center gap-1.5">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <Star className="h-4 w-4 fill-gold-400 text-gold-400" />
                   <span className="font-semibold text-slate-900">
                     {course.rating}
                   </span>

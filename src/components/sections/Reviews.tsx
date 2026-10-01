@@ -10,7 +10,7 @@ export function Reviews() {
   return (
     <section
       id="reviews"
-      className="py-20 lg:py-28 bg-gradient-to-b from-brand-50/40 to-white"
+      className="py-20 lg:py-28"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -47,7 +47,7 @@ export function Reviews() {
                 {Array.from({ length: review.rating }).map((_, i) => (
                   <Star
                     key={i}
-                    className="h-4 w-4 fill-amber-400 text-amber-400"
+                    className="h-4 w-4 fill-gold-400 text-gold-400"
                   />
                 ))}
               </div>

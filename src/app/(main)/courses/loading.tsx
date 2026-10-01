@@ -1,6 +1,6 @@
 export default function CoursesLoading() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header skeleton */}
         <div className="mb-8 space-y-3">

@@ -390,7 +390,7 @@ export default function LearnPage() {
   };
 
   return (
-    <div className="bg-gradient-to-b from-brand-50/40 via-white to-white min-h-[calc(100vh-4rem)]">
+    <div className="min-h-[calc(100vh-4rem)]">
       {/* Top breadcrumb */}
       <div className="border-b border-slate-200/70 bg-white/60 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">

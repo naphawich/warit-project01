@@ -8,19 +8,19 @@ import {
 
 export function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-300">
+    <footer className="bg-brand-900 text-brand-100/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold-400 text-brand-900">
                 <GraduationCap className="h-5 w-5" />
               </div>
               <span className="text-lg font-semibold text-white">
-                Warit<span className="text-brand-400">Academy</span>
+                Warit<span className="text-gold-300">Academy</span>
               </span>
             </Link>
-            <p className="text-sm leading-relaxed text-slate-400">
+            <p className="text-sm leading-relaxed text-brand-200/70">
               แพลตฟอร์มเรียนออนไลน์คุณภาพสูง
               สำหรับผู้ที่ต้องการพัฒนาทักษะอย่างมืออาชีพ
             </p>
@@ -33,7 +33,7 @@ export function Footer() {
                 <Link
                   key={label}
                   href="#"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 hover:bg-brand-600 transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 hover:bg-gold-400 hover:text-brand-900 transition-colors"
                   aria-label={label}
                 >
                   <Icon className="h-4 w-4" />
@@ -55,7 +55,7 @@ export function Footer() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="hover:text-brand-400 transition-colors"
+                    className="hover:text-gold-300 transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -77,7 +77,7 @@ export function Footer() {
                 <li key={cat}>
                   <Link
                     href="/courses"
-                    className="hover:text-brand-400 transition-colors"
+                    className="hover:text-gold-300 transition-colors"
                   >
                     {cat}
                   </Link>
@@ -90,28 +90,28 @@ export function Footer() {
             <h4 className="text-white font-semibold mb-4">ติดต่อเรา</h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-3">
-                <MapPin className="h-4 w-4 mt-0.5 text-brand-400 flex-shrink-0" />
+                <MapPin className="h-4 w-4 mt-0.5 text-gold-400 flex-shrink-0" />
                 <span>กรุงเทพมหานคร, ประเทศไทย</span>
               </li>
               <li className="flex items-start gap-3">
-                <Phone className="h-4 w-4 mt-0.5 text-brand-400 flex-shrink-0" />
+                <Phone className="h-4 w-4 mt-0.5 text-gold-400 flex-shrink-0" />
                 <span>02-xxx-xxxx</span>
               </li>
               <li className="flex items-start gap-3">
-                <Mail className="h-4 w-4 mt-0.5 text-brand-400 flex-shrink-0" />
+                <Mail className="h-4 w-4 mt-0.5 text-gold-400 flex-shrink-0" />
                 <span>contact@warit-academy.com</span>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-brand-200/60">
           <p>© {new Date().getFullYear()} Warit Academy. สงวนลิขสิทธิ์ทุกประการ</p>
           <div className="flex gap-6">
-            <Link href="/privacy" className="hover:text-brand-400 transition-colors">
+            <Link href="/privacy" className="hover:text-gold-300 transition-colors">
               นโยบายความเป็นส่วนตัว
             </Link>
-            <Link href="/terms" className="hover:text-brand-400 transition-colors">
+            <Link href="/terms" className="hover:text-gold-300 transition-colors">
               เงื่อนไขการใช้งาน
             </Link>
           </div>

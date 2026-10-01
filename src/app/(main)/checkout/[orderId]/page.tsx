@@ -208,7 +208,7 @@ export default function CheckoutPage() {
   const expired = secondsLeft !== null && secondsLeft <= 0;
 
   return (
-    <div className="bg-gradient-to-b from-brand-50/40 via-white to-white min-h-[calc(100vh-4rem)]">
+    <div className="min-h-[calc(100vh-4rem)]">
       <div className="border-b border-slate-200/70 bg-white/60 backdrop-blur-sm">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center gap-1.5 text-sm text-slate-500">
@@ -416,7 +416,7 @@ function SuccessState({
   items: OrderItemRow[];
 }) {
   return (
-    <div className="bg-gradient-to-b from-emerald-50/50 via-white to-white min-h-[calc(100vh-4rem)]">
+    <div className="bg-gradient-to-b from-emerald-50/50 to-transparent min-h-[calc(100vh-4rem)]">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
         <AnimatePresence>
           <motion.div
@@ -495,7 +495,7 @@ function SuccessState({
 
 function ErrorState({ message }: { message: string }) {
   return (
-    <div className="bg-gradient-to-b from-red-50/40 via-white to-white min-h-[calc(100vh-4rem)]">
+    <div className="bg-gradient-to-b from-red-50/40 to-transparent min-h-[calc(100vh-4rem)]">
       <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
         <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-900/5 p-8 sm:p-12 text-center">
           <div className="mx-auto w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mb-5">

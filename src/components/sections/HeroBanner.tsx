@@ -10,18 +10,16 @@ export function HeroBanner() {
   return (
     <section
       id="home"
-      className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-brand-100/40"
+      className="relative overflow-hidden"
     >
       <div
-        className="absolute inset-0 opacity-[0.04]"
+        className="absolute inset-0 opacity-[0.05] [mask-image:linear-gradient(to_bottom,black,transparent)]"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 1px 1px, #1E40AF 1px, transparent 0)",
+            "radial-gradient(circle at 1px 1px, #004129 1px, transparent 0)",
           backgroundSize: "32px 32px",
         }}
       />
-      <div className="absolute top-20 -right-32 h-96 w-96 rounded-full bg-brand-200/40 blur-3xl" />
-      <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-brand-300/30 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -31,8 +29,8 @@ export function HeroBanner() {
             transition={{ duration: 0.6 }}
             className="flex flex-col gap-6"
           >
-            <Badge className="w-fit bg-brand-100 text-brand-800 hover:bg-brand-100 border-0 px-3 py-1.5">
-              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+            <Badge className="w-fit bg-gold-100 text-gold-900 hover:bg-gold-100 border border-gold-300 px-3 py-1.5">
+              <Sparkles className="h-3.5 w-3.5 mr-1.5 text-gold-600" />
               คอร์สใหม่ล่าสุด พร้อมโปรโมชั่นพิเศษ
             </Badge>
 
@@ -42,7 +40,7 @@ export function HeroBanner() {
               ก้าวสู่{" "}
               <span className="relative inline-block">
                 <span className="relative z-10 text-brand-700">มืออาชีพ</span>
-                <span className="absolute bottom-1 left-0 right-0 h-3 bg-brand-200/70 -z-0" />
+                <span className="absolute bottom-1 left-0 right-0 h-3 bg-gold-300/70 -z-0" />
               </span>
             </h1>
 
@@ -114,8 +112,8 @@ export function HeroBanner() {
                 transition={{ duration: 0.5, delay: 0.6 }}
                 className="absolute -left-6 top-12 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3 border border-slate-100"
               >
-                <div className="h-10 w-10 rounded-xl bg-brand-100 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-brand-600" />
+                <div className="h-10 w-10 rounded-xl bg-gold-100 flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-gold-600" />
                 </div>
                 <div>
                   <div className="text-xs text-slate-500">เรียนจบแล้ว</div>

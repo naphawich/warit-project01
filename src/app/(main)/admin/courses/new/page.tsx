@@ -154,7 +154,7 @@ export default function NewCoursePage() {
   };
 
   return (
-    <div className="bg-gradient-to-b from-brand-50/40 via-white to-white">
+    <div>
       <div className="border-b border-slate-200/70 bg-white/60 backdrop-blur-sm">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center gap-1.5 text-sm text-slate-500">
