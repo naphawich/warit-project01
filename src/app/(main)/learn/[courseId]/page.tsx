@@ -16,12 +16,14 @@ import {
   Award,
   Loader2,
   Sparkles,
+  RotateCw,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/use-user";
+import { LessonVideo } from "@/components/course/LessonVideo";
 import { useAuth } from "@/lib/auth-context";
 import { useIsCourseOwned } from "@/lib/use-ownership";
 import { courses as catalog } from "@/lib/data";
@@ -285,6 +287,9 @@ export default function LearnPage() {
     [dbLessons]
   );
 
+  // Last watched second per DB lesson, synced from lesson_progress.
+  const [positions, setPositions] = useState<Record<string, number>>({});
+
   // Overlay server progress on top of the localStorage cache (server wins).
   useEffect(() => {
     if (!user || !course || dbLessons.length === 0) return;
@@ -292,10 +297,17 @@ export default function LearnPage() {
     (async () => {
       const { data } = await supabase
         .from("lesson_progress")
-        .select("lesson_id, completed")
+        .select("lesson_id, completed, last_position_seconds")
         .eq("user_id", user.id)
         .eq("course_id", course.id);
       if (!active || !data) return;
+      setPositions(
+        Object.fromEntries(
+          (data as { lesson_id: string; last_position_seconds: number | null }[])
+            .filter((r) => (r.last_position_seconds ?? 0) > 0)
+            .map((r) => [r.lesson_id, r.last_position_seconds as number])
+        )
+      );
       setCompleted((prev) => {
         const next = { ...prev };
         for (const row of data as {
@@ -425,27 +437,51 @@ export default function LearnPage() {
             >
               {/* Video player: R2 (uploaded) → YouTube preview → gradient mockup */}
               {activeLesson.hasR2Video && r2VideoUrl ? (
-                <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl shadow-slate-900/15">
-                  <video
-                    key={activeLesson.id}
-                    src={r2VideoUrl}
-                    controls
-                    controlsList="nodownload"
-                    playsInline
-                    // Only fetch the moov/header, not the body, until play.
-                    // Cuts cold-load from full file → ~1 MB for typical MP4.
-                    preload="metadata"
-                    className="absolute inset-0 w-full h-full"
-                  />
-                </div>
+                <LessonVideo
+                  key={activeLesson.id}
+                  src={r2VideoUrl}
+                  storageKey={`${user.id}-${activeLesson.id}`}
+                  serverPosition={activeLesson.dbId ? positions[activeLesson.dbId] : null}
+                  onSavePosition={(seconds) => {
+                    const lessonId = activeLesson.dbId;
+                    if (!lessonId) return;
+                    // Only the position columns — leaves `completed` untouched.
+                    void supabase
+                      .from("lesson_progress")
+                      .upsert(
+                        {
+                          user_id: user.id,
+                          course_id: course.id,
+                          lesson_id: lessonId,
+                          last_position_seconds: seconds,
+                          updated_at: new Date().toISOString(),
+                        },
+                        { onConflict: "user_id,lesson_id" }
+                      )
+                      .then(({ error }) => {
+                        if (error) console.warn("[learn] position sync failed", error.message);
+                      });
+                  }}
+                />
               ) : activeLesson.hasR2Video && !r2VideoError ? (
                 <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl shadow-slate-900/15 flex items-center justify-center">
                   <Loader2 className="h-8 w-8 text-white animate-spin" />
                 </div>
               ) : activeLesson.hasR2Video && r2VideoError ? (
-                <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl shadow-slate-900/15 flex flex-col items-center justify-center text-white gap-2">
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl shadow-slate-900/15 flex flex-col items-center justify-center text-white gap-3">
                   <span className="text-sm">{r2VideoError}</span>
-                  <span className="text-xs text-white/60">รีเฟรชหน้าเพื่อลองใหม่</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setR2VideoError(null);
+                      setR2RefreshTick((t) => t + 1);
+                    }}
+                    className="h-11 border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+                  >
+                    <RotateCw className="h-4 w-4 mr-1.5" />
+                    ลองโหลดวิดีโออีกครั้ง
+                  </Button>
                 </div>
               ) : activeLesson.video?.type === "youtube" ? (
                 <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl shadow-slate-900/15">
@@ -466,7 +502,7 @@ export default function LearnPage() {
                     className="absolute inset-0 opacity-[0.06]"
                     style={{
                       backgroundImage:
-                        "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)",
+                        "radial-gradient(circle at 1px 1px, var(--color-white) 1px, transparent 0)",
                       backgroundSize: "28px 28px",
                     }}
                   />

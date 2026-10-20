@@ -4,8 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { User, CheckCircle2, Globe } from "lucide-react";
-import { LinkedinIcon, TwitterIcon } from "@/components/icons/SocialIcons";
+import { User, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -135,17 +134,6 @@ export function Instructor() {
               >
                 ดูคอร์สของผู้สอน
               </Button>
-              <div className="flex items-center gap-2 ml-2">
-                {[LinkedinIcon, TwitterIcon, Globe].map((Icon, i) => (
-                  <a
-                    key={i}
-                    href="#"
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700 hover:bg-brand-50 transition-all"
-                  >
-                    <Icon className="h-4 w-4" />
-                  </a>
-                ))}
-              </div>
             </div>
           </motion.div>
         </div>

@@ -66,14 +66,14 @@ export default function CartPage() {
           })),
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setCheckoutError(data.message || data.error || "ไม่สามารถเริ่มการชำระเงินได้");
         return;
       }
       router.push(`/checkout/${data.orderId}`);
-    } catch (e) {
-      setCheckoutError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+    } catch {
+      setCheckoutError("เชื่อมต่อระบบชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setCheckingOut(false);
     }
@@ -272,7 +272,7 @@ export default function CartPage() {
 
                   <div className="flex items-center justify-center gap-1.5 mt-4 text-xs text-slate-500">
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                    ชำระเงินปลอดภัย 100%
+                    ชำระผ่าน PromptPay โดย Omise
                   </div>
                 </div>
 

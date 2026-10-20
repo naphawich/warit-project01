@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Sparkles,
   Smartphone,
+  Download,
+  RotateCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -51,6 +53,9 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [qrBlobUrl, setQrBlobUrl] = useState<string | null>(null);
   const [qrError, setQrError] = useState(false);
+  // Bumped by the "retry" button to re-run the QR fetch.
+  const [qrAttempt, setQrAttempt] = useState(0);
+  const [savingQr, setSavingQr] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
   // Redirect if not logged in
@@ -117,6 +122,40 @@ export default function CheckoutPage() {
     };
   }, [orderId, clearCart]);
 
+  // Fallback for Realtime: mobile browsers often drop the socket while the
+  // user is in their banking app. Poll while pending, and re-check as soon as
+  // the tab becomes visible again.
+  const isPending = order?.status === "pending";
+  useEffect(() => {
+    if (!isPending || !orderId) return;
+    let active = true;
+    const check = async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .single();
+      if (!active || !data) return;
+      const next = data as OrderRow;
+      if (next.status !== "pending") {
+        setOrder(next);
+        if (next.status === "paid") clearCart();
+      }
+    };
+    const id = setInterval(check, 5000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      active = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [isPending, orderId, clearCart]);
+
   // Countdown
   useEffect(() => {
     if (!order?.expires_at) {
@@ -166,7 +205,33 @@ export default function CheckoutPage() {
       active = false;
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
-  }, [order?.qr_image_url, order?.id]);
+  }, [order?.qr_image_url, order?.id, qrAttempt]);
+
+  // Paying on the same phone means the QR can't be scanned from the screen —
+  // save it as a PNG so it can be opened from the banking app's gallery.
+  const handleSaveQr = async () => {
+    if (!qrBlobUrl || !order) return;
+    setSavingQr(true);
+    try {
+      const png = await qrToPng(qrBlobUrl);
+      const fileName = `warit-qr-${order.id.slice(0, 8)}.png`;
+      const file = new File([png], fileName, { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        const url = URL.createObjectURL(png);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch {
+      // User dismissed the share sheet — nothing to do.
+    } finally {
+      setSavingQr(false);
+    }
+  };
 
   if (userLoading || loading) {
     return (
@@ -201,6 +266,14 @@ export default function CheckoutPage() {
   if (order.status === "failed") {
     return (
       <ErrorState message="การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" />
+    );
+  }
+
+  // The QR stops working at expires_at even if the webhook hasn't flipped
+  // the order yet — don't let anyone scan a dead code.
+  if (secondsLeft !== null && secondsLeft <= 0) {
+    return (
+      <ErrorState message="QR Code หมดอายุแล้ว กลับไปที่ตะกร้าเพื่อสร้าง QR ใหม่" />
     );
   }
 
@@ -274,13 +347,20 @@ export default function CheckoutPage() {
                         className="w-64 h-64 sm:w-72 sm:h-72 object-contain"
                       />
                     ) : qrError ? (
-                      <div className="w-64 h-64 sm:w-72 sm:h-72 flex flex-col items-center justify-center gap-2 text-center px-4">
+                      <div className="w-64 h-64 sm:w-72 sm:h-72 flex flex-col items-center justify-center gap-3 text-center px-4">
                         <AlertCircle className="h-8 w-8 text-red-500" />
-                        <div className="text-xs text-slate-500">
+                        <div className="text-sm text-slate-600">
                           โหลด QR ไม่สำเร็จ
-                          <br />
-                          กรุณารีเฟรชหน้านี้
                         </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setQrAttempt((n) => n + 1)}
+                          className="h-11 border-brand-200 text-brand-700"
+                        >
+                          <RotateCw className="h-4 w-4 mr-1.5" />
+                          โหลด QR อีกครั้ง
+                        </Button>
                       </div>
                     ) : (
                       <div className="w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
@@ -290,6 +370,28 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
+
+              {qrBlobUrl && (
+                <div className="flex flex-col items-center gap-1.5 mb-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSaveQr}
+                    disabled={savingQr}
+                    className="h-11 px-5 border-brand-200 text-brand-700 hover:bg-brand-50"
+                  >
+                    {savingQr ? (
+                      <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-1.5" />
+                    )}
+                    บันทึก QR
+                  </Button>
+                  <p className="text-xs text-slate-500 text-center">
+                    จ่ายด้วยมือถือเครื่องนี้? บันทึก QR แล้วเลือกรูปจากแอปธนาคาร
+                  </p>
+                </div>
+              )}
 
               <div className="text-center mb-6">
                 <div className="text-sm text-slate-500 mb-1">ยอดชำระ</div>
@@ -529,5 +631,26 @@ function ErrorState({ message }: { message: string }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// Render the QR (SVG or PNG from Omise) onto a white canvas and export a PNG,
+// since banking apps can only read QR codes from gallery images.
+async function qrToPng(src: string): Promise<Blob> {
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  const size = 1024;
+  const pad = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas unavailable");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, size, size);
+  ctx.drawImage(img, pad, pad, size - pad * 2, size - pad * 2);
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png")
   );
 }

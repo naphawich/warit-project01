@@ -71,7 +71,26 @@ export function VideoPreview({
   const durationLabel =
     durationFromSeconds(previewDurationSeconds) ??
     preview?.durationLabel ??
-    "2:14 นาที";
+    null;
+
+  // No clip uploaded yet: show a plain cover instead of a play button that
+  // only opens a "coming soon" modal.
+  if (!previewVideoEndpoint && !preview) {
+    return (
+      <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-xl shadow-slate-900/10 border border-white/20">
+        <div className={`absolute inset-0 bg-gradient-to-br ${color}`} aria-hidden />
+        <div className="absolute inset-0 flex items-center justify-center opacity-30">
+          <BookOpen className="h-28 w-28 text-white" strokeWidth={1.2} />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+        <div className="absolute bottom-4 left-4 right-4">
+          <span className="inline-flex items-center rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-medium text-white">
+            วิดีโอตัวอย่างเร็ว ๆ นี้
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -121,7 +140,7 @@ export function VideoPreview({
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-medium text-white">
             <Play className="h-3 w-3" fill="currentColor" />
-            ตัวอย่างคอร์ส • {durationLabel}
+            ตัวอย่างคอร์ส{durationLabel ? ` • ${durationLabel}` : ""}
           </span>
         </div>
       </button>
@@ -190,7 +209,7 @@ export function VideoPreview({
                     <div className="text-center">
                       <div className="font-semibold mb-1">{title}</div>
                       <div className="text-sm text-white/70">
-                        [ พื้นที่สำหรับวิดีโอตัวอย่าง ]
+                        วิดีโอตัวอย่างของคอร์สนี้กำลังจะมาเร็ว ๆ นี้
                       </div>
                     </div>
                   </div>

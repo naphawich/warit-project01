@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronRight,
   BookOpen,
@@ -11,6 +11,8 @@ import {
   ShoppingBag,
   CheckCircle2,
   Loader2,
+  AlertCircle,
+  RotateCw,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,13 @@ export default function MyCoursesPage() {
   const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
   const [dbCourses, setDbCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  // Completed lessons (server) and real lesson counts per course, for the
+  // progress bar on each card.
+  const [serverDone, setServerDone] = useState<Record<number, number>>({});
+  const [dbLessonCount, setDbLessonCount] = useState<Record<number, number>>({});
+  // Bumped by the retry button to re-run the fetch.
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!userLoading && !user) router.replace("/login?next=/my-courses");
@@ -44,14 +53,33 @@ export default function MyCoursesPage() {
     (async () => {
       // Pull entitlements + any DB-only courses in parallel — a single
       // round-trip per query, no waterfall.
-      const [entRes, courseRes] = await Promise.all([
+      const [entRes, courseRes, progressRes, lessonsRes] = await Promise.all([
         supabase
           .from("user_courses")
           .select("course_id, acquired_at, order_id")
           .order("acquired_at", { ascending: false }),
         supabase.from("courses").select("*"),
+        supabase
+          .from("lesson_progress")
+          .select("course_id")
+          .eq("completed", true),
+        supabase.from("lessons").select("course_id"),
       ]);
       if (!active) return;
+      // A failed entitlement query must not render as "no courses yet".
+      if (entRes.error) {
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+      setLoadError(false);
+      const countBy = (rows: { course_id: number }[] | null) =>
+        (rows ?? []).reduce<Record<number, number>>((acc, r) => {
+          acc[r.course_id] = (acc[r.course_id] ?? 0) + 1;
+          return acc;
+        }, {});
+      setServerDone(countBy(progressRes.data as { course_id: number }[] | null));
+      setDbLessonCount(countBy(lessonsRes.data as { course_id: number }[] | null));
       setEntitlements((entRes.data as Entitlement[]) ?? []);
       setDbCourses(
         ((courseRes.data as DBCourseRow[]) ?? []).map(dbRowToCourse)
@@ -61,7 +89,42 @@ export default function MyCoursesPage() {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, reloadKey]);
+
+  // Progress = max(server completions, this device's cache). Generated
+  // lessons (courses never seeded in the DB) only exist in localStorage.
+  const progressById = useMemo(() => {
+    const out: Record<number, { pct: number; nextLesson: number | null }> = {};
+    if (!user) return out;
+    for (const e of entitlements) {
+      let localDone = 0;
+      let nextLesson: number | null = null;
+      try {
+        const raw = localStorage.getItem(`learn-progress-${user.id}-${e.course_id}`);
+        if (raw) {
+          const parsed = JSON.parse(raw) as {
+            completed?: Record<string, true>;
+            activeLessonIdx?: number;
+          };
+          localDone = Object.keys(parsed.completed ?? {}).length;
+          if (typeof parsed.activeLessonIdx === "number") {
+            nextLesson = parsed.activeLessonIdx + 1;
+          }
+        }
+      } catch {
+        // storage unavailable
+      }
+      const course = catalog.find((c) => c.id === e.course_id) ??
+        dbCourses.find((c) => c.id === e.course_id);
+      const total = dbLessonCount[e.course_id] || course?.lessons || 0;
+      const done = Math.max(serverDone[e.course_id] ?? 0, localDone);
+      out[e.course_id] = {
+        pct: total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0,
+        nextLesson,
+      };
+    }
+    return out;
+  }, [user, entitlements, dbCourses, serverDone, dbLessonCount]);
 
   if (userLoading || loading) {
     return (
@@ -112,7 +175,14 @@ export default function MyCoursesPage() {
           </p>
         </div>
 
-        {myCourses.length === 0 ? (
+        {loadError ? (
+          <LoadErrorState
+            onRetry={() => {
+              setLoading(true);
+              setReloadKey((k) => k + 1);
+            }}
+          />
+        ) : myCourses.length === 0 ? (
           <EmptyState />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -160,21 +230,54 @@ export default function MyCoursesPage() {
                         {course.hours} ชม.
                       </div>
                     </div>
-                    <div className="text-xs text-slate-500 pt-3 border-t border-slate-100">
-                      ซื้อเมื่อ{" "}
-                      {new Date(course.acquired_at).toLocaleDateString("th-TH", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </div>
-                    <Button
-                      size="sm"
-                      className="bg-brand-700 hover:bg-brand-800 text-white pointer-events-none"
-                    >
-                      เริ่มเรียน
-                      <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                    </Button>
+                    {(() => {
+                      const p = progressById[course.id] ?? { pct: 0, nextLesson: null };
+                      const label =
+                        p.pct >= 100
+                          ? "ทบทวนอีกครั้ง"
+                          : p.pct > 0 || p.nextLesson
+                            ? `เรียนต่อ${p.nextLesson ? ` บทที่ ${p.nextLesson}` : ""}`
+                            : "เริ่มเรียน";
+                      return (
+                        <>
+                          <div className="pt-3 border-t border-slate-100">
+                            <div className="flex items-center justify-between text-xs mb-1.5">
+                              <span className="text-slate-500">ความคืบหน้า</span>
+                              <span className="font-semibold text-brand-700 tabular-nums">
+                                {p.pct}%
+                              </span>
+                            </div>
+                            <div
+                              className="h-2 rounded-full bg-slate-100 overflow-hidden"
+                              role="progressbar"
+                              aria-valuenow={p.pct}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              aria-label="ความคืบหน้าของคอร์ส"
+                            >
+                              <div
+                                className="h-full rounded-full bg-brand-600 transition-all"
+                                style={{ width: `${p.pct}%` }}
+                              />
+                            </div>
+                            <div className="text-xs text-slate-400 mt-2">
+                              ซื้อเมื่อ{" "}
+                              {new Date(course.acquired_at).toLocaleDateString("th-TH", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </div>
+                          </div>
+                          <Button
+                            className="h-11 bg-brand-700 hover:bg-brand-800 text-white pointer-events-none"
+                          >
+                            {label}
+                            <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      );
+                    })()}
                   </div>
                 </Link>
               </motion.div>
@@ -182,6 +285,29 @@ export default function MyCoursesPage() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function LoadErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="bg-white rounded-3xl border border-slate-200 p-10 sm:p-16 text-center max-w-2xl mx-auto">
+      <div className="mx-auto w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mb-5">
+        <AlertCircle className="h-8 w-8 text-red-600" />
+      </div>
+      <h2 className="text-xl font-bold text-slate-900 mb-2">
+        โหลดคอร์สของคุณไม่สำเร็จ
+      </h2>
+      <p className="text-slate-600 mb-6">
+        คอร์สที่ซื้อไว้ยังอยู่ครบ ระบบเชื่อมต่อไม่ได้ชั่วคราว ลองใหม่อีกครั้ง
+      </p>
+      <Button
+        onClick={onRetry}
+        className="h-11 px-6 bg-brand-700 hover:bg-brand-800 text-white"
+      >
+        <RotateCw className="h-4 w-4 mr-1.5" />
+        ลองใหม่
+      </Button>
     </div>
   );
 }

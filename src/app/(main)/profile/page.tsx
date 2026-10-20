@@ -136,7 +136,7 @@ export default function ProfilePage() {
               className="absolute inset-0 opacity-[0.08]"
               style={{
                 backgroundImage:
-                  "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)",
+                  "radial-gradient(circle at 1px 1px, var(--color-white) 1px, transparent 0)",
                 backgroundSize: "28px 28px",
               }}
             />

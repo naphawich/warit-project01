@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { ArrowRight, PlayCircle, Sparkles } from "lucide-react";
+import { ArrowRight, GraduationCap, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -17,7 +17,7 @@ export function HeroBanner() {
         className="absolute inset-0 opacity-[0.05] [mask-image:linear-gradient(to_bottom,black,transparent)]"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 1px 1px, #004129 1px, transparent 0)",
+            "radial-gradient(circle at 1px 1px, var(--color-brand-800) 1px, transparent 0)",
           backgroundSize: "32px 32px",
         }}
       />
@@ -64,12 +64,12 @@ export function HeroBanner() {
               <Button
                 size="lg"
                 variant="outline"
-                render={<Link href="/courses" />}
+                render={<Link href="/#instructor" />}
                 nativeButton={false}
                 className="border-brand-200 text-brand-700 hover:bg-brand-50 h-12 px-6"
               >
-                <PlayCircle className="mr-1 h-4 w-4" />
-                ดูตัวอย่างคอร์ส
+                <GraduationCap className="mr-1 h-4 w-4" />
+                รู้จักครูวริศ
               </Button>
             </div>
 
@@ -112,7 +112,7 @@ export function HeroBanner() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.6 }}
-                className="absolute -left-6 top-12 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3 border border-slate-100"
+                className="absolute left-2 sm:-left-6 top-12 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3 border border-slate-100"
               >
                 <div className="h-10 w-10 rounded-xl bg-gold-100 flex items-center justify-center">
                   <Sparkles className="h-5 w-5 text-gold-600" />
@@ -129,7 +129,7 @@ export function HeroBanner() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.8 }}
-                className="absolute -right-4 bottom-16 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3 border border-slate-100"
+                className="absolute right-2 sm:-right-4 bottom-16 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3 border border-slate-100"
               >
                 <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">
                   ✓

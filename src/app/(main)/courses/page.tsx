@@ -4,49 +4,24 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import {
-  Search,
   Clock,
   Users,
   Star,
   BookOpen,
   ArrowRight,
   ChevronRight,
-  SlidersHorizontal,
-  X,
   Play,
   CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@/components/ui/dropdown-menu";
 import { courses as staticCatalog } from "@/lib/data";
 import type { Course } from "@/lib/data";
 import { useOwnedCourseIds } from "@/lib/use-ownership";
 import { mergeCourses, type DBCourseRow } from "@/lib/courses-db";
 import { supabase } from "@/lib/supabase";
 
-type SortKey = "popular" | "rating" | "price-asc" | "price-desc" | "newest";
-
-const sortOptions: Record<SortKey, string> = {
-  popular: "ยอดนิยม",
-  rating: "คะแนนสูงสุด",
-  "price-asc": "ราคา: น้อย → มาก",
-  "price-desc": "ราคา: มาก → น้อย",
-  newest: "ใหม่ล่าสุด",
-};
-
 export default function CoursesPage() {
-  const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("ทั้งหมด");
-  const [activeLevel, setActiveLevel] = useState<string>("ทั้งหมด");
-  const [sort, setSort] = useState<SortKey>("popular");
   const ownedIds = useOwnedCourseIds();
 
   // Start with the static catalog so the page paints something instantly;
@@ -68,53 +43,11 @@ export default function CoursesPage() {
     };
   }, []);
 
-  const categories = useMemo(() => {
-    const set = new Set(courses.map((c) => c.category));
-    return ["ทั้งหมด", ...Array.from(set)];
-  }, [courses]);
-
-  const levels = useMemo(() => {
-    const set = new Set(courses.map((c) => c.level));
-    return ["ทั้งหมด", ...Array.from(set)];
-  }, [courses]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let result = courses.filter((c) => {
-      if (activeCategory !== "ทั้งหมด" && c.category !== activeCategory)
-        return false;
-      if (activeLevel !== "ทั้งหมด" && c.level !== activeLevel) return false;
-      if (q && !c.title.toLowerCase().includes(q) && !c.shortDescription.toLowerCase().includes(q))
-        return false;
-      return true;
-    });
-    switch (sort) {
-      case "rating":
-        result = [...result].sort((a, b) => b.rating - a.rating);
-        break;
-      case "price-asc":
-        result = [...result].sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        result = [...result].sort((a, b) => b.price - a.price);
-        break;
-      case "newest":
-        result = [...result].sort((a, b) => b.id - a.id);
-        break;
-      default:
-        result = [...result].sort((a, b) => b.students - a.students);
-    }
-    return result;
-  }, [courses, query, activeCategory, activeLevel, sort]);
-
-  const hasFilters =
-    query !== "" || activeCategory !== "ทั้งหมด" || activeLevel !== "ทั้งหมด";
-
-  const clearAll = () => {
-    setQuery("");
-    setActiveCategory("ทั้งหมด");
-    setActiveLevel("ทั้งหมด");
-  };
+  // Catalog order follows the curriculum (ม.4 → ม.6 → A-Level).
+  const sortedCourses = useMemo(
+    () => [...courses].sort((a, b) => a.id - b.id),
+    [courses]
+  );
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
@@ -146,161 +79,9 @@ export default function CoursesPage() {
           </p>
         </div>
 
-        {/* Filters bar */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 lg:p-5 shadow-sm mb-6">
-          <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-              <Input
-                placeholder="ค้นหาคอร์สที่คุณสนใจ..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="pl-10 h-11"
-              />
-              {query && (
-                <button
-                  onClick={() => setQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  aria-label="ล้างคำค้นหา"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Level filter */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <button className="flex items-center justify-between gap-2 h-11 px-4 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 min-w-44">
-                    <span className="flex items-center gap-2">
-                      <SlidersHorizontal className="h-4 w-4" />
-                      ระดับ: {activeLevel}
-                    </span>
-                  </button>
-                }
-              />
-              <DropdownMenuContent
-                align="end"
-                sideOffset={6}
-                className="min-w-44 p-1"
-              >
-                <DropdownMenuRadioGroup
-                  value={activeLevel}
-                  onValueChange={setActiveLevel}
-                >
-                  {levels.map((lvl) => (
-                    <DropdownMenuRadioItem
-                      key={lvl}
-                      value={lvl}
-                      className="py-2"
-                    >
-                      {lvl}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Sort */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <button className="flex items-center justify-between gap-2 h-11 px-4 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 min-w-52">
-                    <span>เรียงตาม: {sortOptions[sort]}</span>
-                  </button>
-                }
-              />
-              <DropdownMenuContent
-                align="end"
-                sideOffset={6}
-                className="min-w-52 p-1"
-              >
-                <DropdownMenuRadioGroup
-                  value={sort}
-                  onValueChange={(v) => setSort(v as SortKey)}
-                >
-                  {(Object.keys(sortOptions) as SortKey[]).map((key) => (
-                    <DropdownMenuRadioItem
-                      key={key}
-                      value={key}
-                      className="py-2"
-                    >
-                      {sortOptions[key]}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Category chips */}
-          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 overflow-x-auto pb-1">
-            {categories.map((cat) => {
-              const isActive = activeCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-brand-700 text-white shadow-sm shadow-brand-700/30"
-                      : "bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700"
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Result counter */}
-        <div className="flex items-center justify-between mb-5">
-          <p className="text-sm text-slate-600">
-            แสดง{" "}
-            <span className="font-semibold text-slate-900">
-              {filtered.length}
-            </span>{" "}
-            จาก{" "}
-            <span className="font-semibold text-slate-900">
-              {courses.length}
-            </span>{" "}
-            คอร์ส
-          </p>
-          {hasFilters && (
-            <button
-              onClick={clearAll}
-              className="text-sm text-slate-500 hover:text-brand-700 transition-colors"
-            >
-              ล้างตัวกรองทั้งหมด
-            </button>
-          )}
-        </div>
-
         {/* Grid */}
-        {filtered.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center max-w-2xl mx-auto">
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-              <Search className="h-8 w-8 text-slate-400" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">
-              ไม่พบคอร์สที่ค้นหา
-            </h3>
-            <p className="text-slate-600 mb-6">
-              ลองเปลี่ยนคำค้นหา หรือล้างตัวกรองดูครับ
-            </p>
-            <Button
-              onClick={clearAll}
-              className="bg-brand-700 hover:bg-brand-800 text-white"
-            >
-              ล้างตัวกรอง
-            </Button>
-          </div>
-        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((course, i) => {
+            {sortedCourses.map((course, i) => {
               const isOwned = ownedIds?.has(course.id) ?? false;
               const linkHref = isOwned
                 ? `/learn/${course.id}`
@@ -429,7 +210,6 @@ export default function CoursesPage() {
               );
             })}
           </div>
-        )}
       </div>
     </div>
   );

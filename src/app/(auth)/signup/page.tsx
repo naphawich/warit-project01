@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Mail,
@@ -20,8 +21,14 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { supabase } from "@/lib/supabase";
+import {
+  readOAuthError,
+  signInWithGoogle,
+  useGoogleAuthEnabled,
+} from "@/lib/google-auth";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -34,11 +41,31 @@ export default function SignupPage() {
   const [success, setSuccess] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
   const [nextParam, setNextParam] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const googleEnabled = useGoogleAuthEnabled();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNextParam(params.get("next") || "");
+    const oauthError = readOAuthError();
+    if (oauthError) setError(oauthError);
   }, []);
+
+  // Google sign-up creates the account on first sign-in, so it needs the
+  // same terms consent as the email form.
+  const handleGoogle = async () => {
+    setError(null);
+    if (!acceptTerms) {
+      setError("กรุณายอมรับเงื่อนไขการใช้งาน");
+      return;
+    }
+    setGoogleLoading(true);
+    const { error: oauthError } = await signInWithGoogle(nextParam || "/");
+    if (oauthError) {
+      setGoogleLoading(false);
+      setError("สมัครด้วย Google ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    }
+  };
 
   const loginHref = nextParam
     ? `/login?next=${encodeURIComponent(nextParam)}`
@@ -100,6 +127,18 @@ export default function SignupPage() {
       return;
     }
 
+    // With "Confirm email" off, Supabase signs the user in right away and
+    // sends no email — go straight on instead of asking them to check inbox.
+    if (data.session) {
+      router.push(
+        nextParam.startsWith("/") && !nextParam.startsWith("//")
+          ? nextParam
+          : "/"
+      );
+      router.refresh();
+      return;
+    }
+
     if (data.user) {
       setSuccess(true);
     }
@@ -147,7 +186,7 @@ export default function SignupPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">สมัครสมาชิก</h1>
         <p className="text-slate-600">
-          สร้างบัญชีใหม่ เริ่มต้นเรียนรู้กับคอร์สคุณภาพสูง
+          สร้างบัญชีแล้วเริ่มเรียนชีวะ ม.ปลาย กับครูวริศได้ทันที
         </p>
       </div>
 
@@ -359,11 +398,17 @@ export default function SignupPage() {
         <Button
           type="button"
           variant="outline"
-          disabled
+          disabled={!googleEnabled || googleLoading || loading}
+          onClick={handleGoogle}
           className="w-full h-11 border-slate-200 hover:bg-slate-50 text-slate-700 font-medium"
         >
-          <GoogleIcon className="h-5 w-5 mr-2" />
-          สมัครด้วย Google (เร็วๆ นี้)
+          {googleLoading ? (
+            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+          ) : (
+            <GoogleIcon className="h-5 w-5 mr-2" />
+          )}
+          สมัครด้วย Google
+          {!googleEnabled && " (เร็วๆ นี้)"}
         </Button>
 
         <p className="text-center text-sm text-slate-600 pt-4">

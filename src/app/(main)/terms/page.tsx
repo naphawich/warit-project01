@@ -1,3 +1,4 @@
+import { CONTACT } from "@/lib/site";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
@@ -87,7 +88,13 @@ export default function TermsPage() {
             </h2>
             <p>
               คำถามเกี่ยวกับเงื่อนไขนี้ ติดต่อ{" "}
-              <span className="text-brand-700">contact@warit-academy.com</span>
+              {CONTACT.email ? (
+                <a href={`mailto:${CONTACT.email}`} className="text-brand-700 hover:underline">
+                  {CONTACT.email}
+                </a>
+              ) : (
+                "ผ่านช่องทางติดต่อที่ระบุไว้ด้านล่างของเว็บไซต์"
+              )}
             </p>
           </section>
         </div>

@@ -18,6 +18,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { supabase } from "@/lib/supabase";
+import {
+  readOAuthError,
+  signInWithGoogle,
+  useGoogleAuthEnabled,
+} from "@/lib/google-auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,11 +33,26 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [resetMsg, setResetMsg] = useState<string | null>(null);
   const [nextParam, setNextParam] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const googleEnabled = useGoogleAuthEnabled();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNextParam(params.get("next") || "");
+    const oauthError = readOAuthError();
+    if (oauthError) setError(oauthError);
   }, []);
+
+  const handleGoogle = async () => {
+    setError(null);
+    setGoogleLoading(true);
+    const { error: oauthError } = await signInWithGoogle(nextParam || "/");
+    // On success the browser is already navigating to Google.
+    if (oauthError) {
+      setGoogleLoading(false);
+      setError("เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    }
+  };
 
   const signupHref = nextParam
     ? `/signup?next=${encodeURIComponent(nextParam)}`
@@ -199,11 +219,17 @@ export default function LoginPage() {
         <Button
           type="button"
           variant="outline"
-          disabled
+          disabled={!googleEnabled || googleLoading || loading}
+          onClick={handleGoogle}
           className="w-full h-11 border-slate-200 hover:bg-slate-50 text-slate-700 font-medium"
         >
-          <GoogleIcon className="h-5 w-5 mr-2" />
-          เข้าสู่ระบบด้วย Google (เร็วๆ นี้)
+          {googleLoading ? (
+            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+          ) : (
+            <GoogleIcon className="h-5 w-5 mr-2" />
+          )}
+          เข้าสู่ระบบด้วย Google
+          {!googleEnabled && " (เร็วๆ นี้)"}
         </Button>
 
         <p className="text-center text-sm text-slate-600 pt-4">

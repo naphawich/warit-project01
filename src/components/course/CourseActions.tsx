@@ -2,10 +2,19 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { ShoppingCart, Check, Lock, Play, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ShoppingCart,
+  Check,
+  Lock,
+  Play,
+  CheckCircle2,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart, type CartItem } from "@/lib/cart-store";
+import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/use-user";
 import { useIsCourseOwned } from "@/lib/use-ownership";
 
@@ -30,6 +39,45 @@ export function CourseActions({ item }: Props) {
   const addItem = useCart((s) => s.addItem);
   const removeFromCart = useCart((s) => s.removeItem);
   const inCart = useCart((s) => s.items.some((i) => i.id === item.id));
+  const [buying, setBuying] = useState(false);
+  const [buyError, setBuyError] = useState<string | null>(null);
+
+  // "Buy now" skips the cart: create an order for just this course and go
+  // straight to the PromptPay QR. The cart stays for anyone collecting
+  // several courses.
+  const startCheckout = useCallback(async () => {
+    setBuying(true);
+    setBuyError(null);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        router.push(`/login?next=${encodeURIComponent(pathname)}`);
+        return;
+      }
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          items: [{ id: item.id, title: item.title, price: item.price }],
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.orderId) {
+        setBuyError(data.message || data.error || "สร้างคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+        setBuying(false);
+        return;
+      }
+      router.push(`/checkout/${data.orderId}`);
+    } catch {
+      setBuyError("เชื่อมต่อระบบชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      setBuying(false);
+    }
+  }, [item.id, item.title, item.price, pathname, router]);
 
   useEffect(() => setMounted(true), []);
 
@@ -48,14 +96,17 @@ export function CourseActions({ item }: Props) {
       if (pending.item.id !== item.id) return;
       localStorage.removeItem(PENDING_KEY);
       if (owned) return; // already owns it — nothing to do
-      addItem(pending.item);
       if (pending.action === "buy-now") {
-        router.push("/cart");
+        // Deferred so the checkout's own state updates don't run inside this
+        // effect; the pending key is already consumed, so no cleanup here.
+        setTimeout(() => void startCheckout(), 0);
+      } else {
+        addItem(pending.item);
       }
     } catch {
       localStorage.removeItem(PENDING_KEY);
     }
-  }, [mounted, loading, user, ownershipLoading, owned, item.id, addItem, router]);
+  }, [mounted, loading, user, ownershipLoading, owned, item.id, addItem, startCheckout]);
 
   // OWNED — show "เริ่มเรียน" CTA
   if (mounted && owned) {
@@ -106,8 +157,7 @@ export function CourseActions({ item }: Props) {
       redirectToLogin({ action: "buy-now", item });
       return;
     }
-    addItem(item);
-    router.push("/cart");
+    void startCheckout();
   };
 
   const handleAddToCart = () => {
@@ -126,12 +176,27 @@ export function CourseActions({ item }: Props) {
     <div className="space-y-2">
       <Button
         onClick={handleBuyNow}
-        disabled={busy}
+        disabled={busy || buying}
         className="w-full h-12 bg-brand-700 hover:bg-brand-800 text-white shadow-lg shadow-brand-700/25 text-base disabled:opacity-70"
       >
-        <ShoppingCart className="h-4 w-4 mr-1.5" />
-        ซื้อคอร์สนี้
+        {buying ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            กำลังสร้าง QR...
+          </>
+        ) : (
+          <>
+            <ShoppingCart className="h-4 w-4 mr-1.5" />
+            ซื้อคอร์สนี้
+          </>
+        )}
       </Button>
+      {buyError && (
+        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+          <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+          <span>{buyError}</span>
+        </div>
+      )}
       <Button
         onClick={handleAddToCart}
         variant="outline"

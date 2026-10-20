@@ -39,6 +39,10 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { user, loading: userLoading } = useUser();
+  // The purchased-course library sits in the top bar, not only behind the
+  // profile menu — it's what returning students come for.
+  const showMyCourses = !userLoading && !!user;
   const cartCount = useCart((s) => s.items.length);
 
   useEffect(() => {
@@ -98,6 +102,16 @@ export function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
+            {showMyCourses && (
+              <Link
+                href="/my-courses"
+                aria-label="คอร์สของฉัน"
+                className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand-700 px-3 lg:px-4 text-sm font-medium text-white shadow-md shadow-brand-700/20 hover:bg-brand-800 transition-colors"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden lg:inline">คอร์สของฉัน</span>
+              </Link>
+            )}
             <CartButton mounted={mounted} count={cartCount} />
             <ProfileMenu />
           </div>
@@ -106,7 +120,7 @@ export function Navbar() {
             <CartButton mounted={mounted} count={cartCount} />
             <ProfileMenu />
             <button
-              className="p-2 rounded-lg text-slate-700 hover:bg-slate-100"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100"
               onClick={() => setOpen(!open)}
               aria-label="เปิด/ปิดเมนู"
               aria-expanded={open}
@@ -120,11 +134,21 @@ export function Navbar() {
         {open && (
           <div id="mobile-nav" className="md:hidden pb-4 pt-2 border-t border-slate-200">
             <nav className="flex flex-col gap-1">
+              {showMyCourses && (
+                <Link
+                  href="/my-courses"
+                  className="mb-1 flex items-center gap-2 px-3 py-3 rounded-lg bg-brand-700 text-sm font-medium text-white hover:bg-brand-800"
+                  onClick={() => setOpen(false)}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  คอร์สของฉัน
+                </Link>
+              )}
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-700"
+                  className="px-3 py-3 rounded-lg text-sm font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-700"
                   onClick={() => setOpen(false)}
                 >
                   {item.label}
@@ -138,19 +162,21 @@ export function Navbar() {
   );
 }
 
+// Hidden while the cart is empty — most visits are students returning to
+// learn, so the cart only earns its spot once something is in it. It stays
+// reachable from the profile menu either way.
 function CartButton({ mounted, count }: { mounted: boolean; count: number }) {
+  if (!mounted || count === 0) return null;
   return (
     <Link
       href="/cart"
-      className="relative flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
-      aria-label="ตะกร้าสินค้า"
+      className="relative flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors"
+      aria-label={`ตะกร้าสินค้า (${count} รายการ)`}
     >
       <ShoppingCart className="h-5 w-5" />
-      {mounted && count > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-700 px-1 text-[10px] font-semibold text-white">
-          {count}
-        </span>
-      )}
+      <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold-400 px-1 text-xs font-semibold text-gold-900">
+        {count}
+      </span>
     </Link>
   );
 }
@@ -175,7 +201,7 @@ function ProfileMenu() {
       <DropdownMenuTrigger
         render={
           <button
-            className={`relative flex h-10 w-10 items-center justify-center rounded-full overflow-hidden transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ring-offset-2 ${
+            className={`relative flex h-11 w-11 items-center justify-center rounded-full overflow-hidden transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ring-offset-2 ${
               isLoggedIn
                 ? "bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-md shadow-brand-700/30 hover:from-brand-700 hover:to-brand-900"
                 : "bg-gradient-to-br from-brand-100 to-brand-200 text-brand-800 hover:from-brand-200 hover:to-brand-300"

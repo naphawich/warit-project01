@@ -6,12 +6,19 @@ import {
   YoutubeIcon,
 } from "@/components/icons/SocialIcons";
 import { reviews } from "@/lib/data";
+import { CONTACT, SOCIAL } from "@/lib/site";
+
+const SOCIAL_LINKS = [
+  { Icon: FacebookIcon, label: "Facebook", href: SOCIAL.facebook },
+  { Icon: InstagramIcon, label: "Instagram", href: SOCIAL.instagram },
+  { Icon: YoutubeIcon, label: "YouTube", href: SOCIAL.youtube },
+].filter((s) => s.href);
 
 export function Footer() {
   return (
     <footer className="bg-brand-900 text-brand-100/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           <div>
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold-400 text-brand-900">
@@ -25,22 +32,22 @@ export function Footer() {
               ติวชีววิทยา ม.4–6 ออนไลน์ เน้นเข้าใจ ไม่ต้องท่องจำ
               พร้อมตะลุยโจทย์ A-Level กับครูวริศ
             </p>
-            <div className="flex gap-3 mt-5">
-              {[
-                { Icon: FacebookIcon, label: "Facebook" },
-                { Icon: InstagramIcon, label: "Instagram" },
-                { Icon: YoutubeIcon, label: "YouTube" },
-              ].map(({ Icon, label }) => (
-                <Link
-                  key={label}
-                  href="#"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 hover:bg-gold-400 hover:text-brand-900 transition-colors"
-                  aria-label={label}
-                >
-                  <Icon className="h-4 w-4" />
-                </Link>
-              ))}
-            </div>
+            {SOCIAL_LINKS.length > 0 && (
+              <div className="flex gap-3 mt-5">
+                {SOCIAL_LINKS.map(({ Icon, label, href }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-11 w-11 items-center justify-center rounded-lg bg-white/10 hover:bg-gold-400 hover:text-brand-900 transition-colors"
+                    aria-label={label}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -68,41 +75,28 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">คอร์สเรียน</h4>
-            <ul className="space-y-2 text-sm">
-              {[
-                "ชีววิทยา ม.4",
-                "ชีววิทยา ม.5",
-                "ชีววิทยา ม.6",
-                "ตะลุยโจทย์ A-Level",
-              ].map((cat) => (
-                <li key={cat}>
-                  <Link
-                    href="/courses"
-                    className="hover:text-gold-300 transition-colors"
-                  >
-                    {cat}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
             <h4 className="text-white font-semibold mb-4">ติดต่อเรา</h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 mt-0.5 text-gold-400 flex-shrink-0" />
-                <span>กรุงเทพมหานคร, ประเทศไทย</span>
+                <span>{CONTACT.location}</span>
               </li>
-              <li className="flex items-start gap-3">
-                <Phone className="h-4 w-4 mt-0.5 text-gold-400 flex-shrink-0" />
-                <span>02-xxx-xxxx</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Mail className="h-4 w-4 mt-0.5 text-gold-400 flex-shrink-0" />
-                <span>contact@warit-academy.com</span>
-              </li>
+              {CONTACT.phone && (
+                <li className="flex items-start gap-3">
+                  <Phone className="h-4 w-4 mt-0.5 text-gold-400 flex-shrink-0" />
+                  <a href={`tel:${CONTACT.phone}`} className="hover:text-gold-300 transition-colors">
+                    {CONTACT.phone}
+                  </a>
+                </li>
+              )}
+              {CONTACT.email && (
+                <li className="flex items-start gap-3">
+                  <Mail className="h-4 w-4 mt-0.5 text-gold-400 flex-shrink-0" />
+                  <a href={`mailto:${CONTACT.email}`} className="hover:text-gold-300 transition-colors">
+                    {CONTACT.email}
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
         </div>

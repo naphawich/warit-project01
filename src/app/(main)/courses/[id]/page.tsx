@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -7,9 +8,12 @@ import {
   BookOpen,
   ChevronRight,
   CheckCircle2,
-  Heart,
-  Share2,
   Award,
+  ChevronDown,
+  PlayCircle,
+  Lock,
+  QrCode,
+  Infinity as InfinityIcon,
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
@@ -17,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { VideoPreview } from "@/components/course/VideoPreview";
 import { CourseActions } from "@/components/course/CourseActions";
-import { courses as staticCatalog } from "@/lib/data";
+import { courses as staticCatalog, faqs } from "@/lib/data";
 import { dbRowToCourse, type DBCourseRow } from "@/lib/courses-db";
 
 // Static IDs are known at build; DB IDs (100+) render on demand.
@@ -26,6 +30,9 @@ export function generateStaticParams() {
 }
 
 export const dynamicParams = true;
+// Curriculum and preview clips come from the DB — refresh the static pages
+// every few minutes so admin edits show up without a redeploy.
+export const revalidate = 300;
 
 async function loadCourse(id: string) {
   // Static catalog first — no network needed for ids 1-9
@@ -97,6 +104,101 @@ async function loadPreviewSource(
   return null;
 }
 
+type CurriculumChapter = {
+  chapterIndex: number;
+  title: string;
+  lessons: {
+    id: string;
+    title: string;
+    durationSeconds: number | null;
+    isFreePreview: boolean;
+  }[];
+};
+
+// Only the curriculum an admin actually authored. Static courses that were
+// never seeded return [] and the section is hidden — the learn page's
+// generated placeholder lessons shouldn't be shown to buyers as a syllabus.
+async function loadCurriculum(courseId: number): Promise<CurriculumChapter[]> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return [];
+  const supabase = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const [lsRes, chRes] = await Promise.all([
+    supabase
+      .from("lessons")
+      .select("id, chapter_index, lesson_index, title, duration_seconds, is_preview, video_storage_key")
+      .eq("course_id", courseId)
+      .order("global_index", { ascending: true }),
+    supabase
+      .from("chapters")
+      .select("chapter_index, title")
+      .eq("course_id", courseId)
+      .order("chapter_index", { ascending: true }),
+  ]);
+  const lessons = lsRes.data ?? [];
+  if (lessons.length === 0) return [];
+  const chapterTitles = new Map(
+    (chRes.data ?? []).map((c) => [c.chapter_index as number, c.title as string])
+  );
+  const indices = Array.from(new Set(lessons.map((l) => l.chapter_index as number))).sort(
+    (a, b) => a - b
+  );
+  return indices.map((ci, order) => ({
+    chapterIndex: ci,
+    title: chapterTitles.get(ci) ?? `บทที่ ${order + 1}`,
+    lessons: lessons
+      .filter((l) => l.chapter_index === ci)
+      .sort((a, b) => (a.lesson_index as number) - (b.lesson_index as number))
+      .map((l) => ({
+        id: l.id as string,
+        title: (l.title as string | null) ?? "บทเรียน",
+        durationSeconds: (l.duration_seconds as number | null) ?? null,
+        isFreePreview: !!l.is_preview && !!l.video_storage_key,
+      })),
+  }));
+}
+
+function formatMinutes(totalSeconds: number): string {
+  const minutes = Math.round(totalSeconds / 60);
+  if (minutes < 60) return `${minutes} นาที`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h} ชม. ${m} นาที` : `${h} ชม.`;
+}
+
+function formatClip(seconds: number | null): string | null {
+  if (!seconds || seconds <= 0) return null;
+  return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+}
+
+// Per-course title/description so search results and shared links show the
+// course itself rather than the site-wide defaults.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const course = await loadCourse(id);
+  if (!course) return {};
+  const title = `${course.title} | Warit Biology`;
+  return {
+    title,
+    description: course.shortDescription,
+    // openGraph replaces the root one wholesale, so repeat the shared fields.
+    openGraph: {
+      type: "website",
+      locale: "th_TH",
+      siteName: "Warit Biology",
+      title,
+      description: course.shortDescription,
+      images: ["/hero-warit.jpg"],
+    },
+  };
+}
+
 export default async function CoursePage({
   params,
 }: {
@@ -106,7 +208,15 @@ export default async function CoursePage({
   const course = await loadCourse(id);
   if (!course) notFound();
 
-  const previewSource = await loadPreviewSource(course.id);
+  const [previewSource, curriculum] = await Promise.all([
+    loadPreviewSource(course.id),
+    loadCurriculum(course.id),
+  ]);
+  const curriculumLessonCount = curriculum.reduce((n, c) => n + c.lessons.length, 0);
+  const curriculumSeconds = curriculum.reduce(
+    (n, c) => n + c.lessons.reduce((m, l) => m + (l.durationSeconds ?? 0), 0),
+    0
+  );
 
   const discount =
     course.originalPrice > course.price
@@ -259,6 +369,83 @@ export default async function CoursePage({
                 ))}
               </div>
             </section>
+
+            {/* Curriculum (only when authored in the DB) */}
+            {curriculum.length > 0 && (
+              <section>
+                <div className="flex flex-wrap items-end justify-between gap-2 mb-4">
+                  <h2 className="text-2xl font-bold text-slate-900">
+                    เนื้อหาในคอร์ส
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    {curriculum.length} บท · {curriculumLessonCount} คลิป
+                    {curriculumSeconds > 0 && ` · ${formatMinutes(curriculumSeconds)}`}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden">
+                  {curriculum.map((chapter, i) => (
+                    <details key={chapter.chapterIndex} open={i === 0} className="group">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                        <span className="font-semibold text-slate-900">
+                          {chapter.title}
+                        </span>
+                        <span className="flex items-center gap-3 text-sm text-slate-500 shrink-0">
+                          {chapter.lessons.length} คลิป
+                          <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                        </span>
+                      </summary>
+                      <ul className="px-5 pb-4 space-y-1">
+                        {chapter.lessons.map((lesson) => (
+                          <li
+                            key={lesson.id}
+                            className="flex items-center gap-3 py-2 text-sm"
+                          >
+                            {lesson.isFreePreview ? (
+                              <PlayCircle className="h-4 w-4 text-brand-600 shrink-0" />
+                            ) : (
+                              <Lock className="h-4 w-4 text-slate-300 shrink-0" />
+                            )}
+                            <span className="flex-1 text-slate-700">
+                              {lesson.title}
+                            </span>
+                            {lesson.isFreePreview && (
+                              <Badge className="bg-gold-100 text-gold-900 hover:bg-gold-100 border-0">
+                                ดูฟรี
+                              </Badge>
+                            )}
+                            {formatClip(lesson.durationSeconds) && (
+                              <span className="text-slate-400 tabular-nums">
+                                {formatClip(lesson.durationSeconds)}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* FAQ before buying */}
+            <section>
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                คำถามก่อนซื้อ
+              </h2>
+              <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden">
+                {faqs.map((faq) => (
+                  <details key={faq.q} className="group">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-medium text-slate-900 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                      {faq.q}
+                      <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 transition-transform group-open:rotate-180" />
+                    </summary>
+                    <p className="px-5 pb-4 text-sm text-slate-600 leading-relaxed">
+                      {faq.a}
+                    </p>
+                  </details>
+                ))}
+              </div>
+            </section>
           </div>
 
           {/* Sticky right card (desktop) */}
@@ -326,6 +513,27 @@ export default async function CoursePage({
                       </li>
                     ))}
                   </ul>
+                </div>
+
+                <div className="mt-5 rounded-xl bg-slate-50 p-4 space-y-2.5 text-xs text-slate-600">
+                  <div className="flex items-start gap-2">
+                    <QrCode className="h-4 w-4 text-brand-600 flex-shrink-0" />
+                    ชำระผ่าน QR พร้อมเพย์ เข้าเรียนได้ทันทีหลังจ่าย
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <InfinityIcon className="h-4 w-4 text-brand-600 flex-shrink-0" />
+                    ซื้อครั้งเดียว ไม่มีค่ารายเดือน
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Lock className="h-4 w-4 text-brand-600 flex-shrink-0" />
+                    <span>
+                      อ่าน
+                      <Link href="/terms" className="mx-1 text-brand-700 underline underline-offset-2">
+                        เงื่อนไขการใช้งาน
+                      </Link>
+                      เรื่องการคืนเงินก่อนซื้อ
+                    </span>
+                  </div>
                 </div>
 
               </div>
