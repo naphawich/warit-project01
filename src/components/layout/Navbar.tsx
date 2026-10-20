@@ -163,8 +163,7 @@ export function Navbar() {
 }
 
 // Hidden while the cart is empty — most visits are students returning to
-// learn, so the cart only earns its spot once something is in it. It stays
-// reachable from the profile menu either way.
+// learn, so the cart only earns its spot once something is in it.
 function CartButton({ mounted, count }: { mounted: boolean; count: number }) {
   if (!mounted || count === 0) return null;
   return (
@@ -284,22 +283,6 @@ function LoggedInMenu({
       >
         <UserCircle className="h-4 w-4 mr-2 text-brand-700" />
         โปรไฟล์ของฉัน
-      </DropdownMenuItem>
-
-      <DropdownMenuItem
-        render={<Link href="/my-courses" />}
-        className="cursor-pointer px-2 py-2.5 text-slate-700 hover:text-brand-700"
-      >
-        <BookOpen className="h-4 w-4 mr-2 text-brand-700" />
-        คอร์สของฉัน
-      </DropdownMenuItem>
-
-      <DropdownMenuItem
-        render={<Link href="/cart" />}
-        className="cursor-pointer px-2 py-2.5 text-slate-700 hover:text-brand-700"
-      >
-        <ShoppingCart className="h-4 w-4 mr-2 text-brand-700" />
-        ตะกร้าของฉัน
       </DropdownMenuItem>
 
       <DropdownMenuSeparator />

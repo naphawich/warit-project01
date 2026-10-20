@@ -152,3 +152,14 @@
     @apply font-sans;
   }
 }
+
+/* Browser autofill paints inputs light blue, which clashes with the green
+   theme — keep autofilled fields the same white as empty ones. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--color-white) inset;
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  transition: background-color 9999s ease-out 0s;
+}

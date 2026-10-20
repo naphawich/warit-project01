@@ -14,8 +14,9 @@ export default function AuthLayout({
 }) {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-white">
-      {/* Brand side */}
-      <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 text-white">
+      {/* Brand side — pinned to the viewport so the logo and footer stay put
+          while a longer form (signup) scrolls. */}
+      <div className="relative hidden lg:flex lg:sticky lg:top-0 lg:h-screen lg:self-start flex-col justify-between p-10 overflow-hidden bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 text-white">
         <div
           className="absolute inset-0 opacity-[0.08]"
           style={{
@@ -43,8 +44,8 @@ export default function AuthLayout({
             พร้อมพิชิต A-Level
           </h2>
           <p className="text-brand-100/90 text-lg leading-relaxed mb-10 max-w-md">
-            สมัครสมาชิกแล้วเริ่มเรียนชีววิทยากับครูวริศ
-            ได้ทุกที่ ทุกเวลา
+            สมัครสมาชิกแล้วเริ่มเรียนชีววิทยากับครูวริศ{" "}
+            <span className="whitespace-nowrap">ได้ทุกที่ ทุกเวลา</span>
           </p>
 
           <div className="space-y-4">

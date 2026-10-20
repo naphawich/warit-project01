@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 
-const SPEEDS = [1, 1.25, 1.5, 2] as const;
+// Speed is picked from the player's own menu; we only remember the choice.
 const RATE_KEY = "warit-video-rate";
 // How often (ms) a playing video persists its position.
 const SAVE_EVERY_MS = 10_000;
@@ -37,18 +37,7 @@ export function LessonVideo({ src, storageKey, serverPosition, onSavePosition }:
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastSaveRef = useRef(0);
   const posKey = `warit-video-pos-${storageKey}`;
-  // Only mounted client-side (after the signed URL loads), so reading the
-  // saved speed in the initializer can't cause a hydration mismatch.
-  const [rate, setRate] = useState<number>(() => {
-    if (typeof window === "undefined") return 1;
-    const saved = readNumber(RATE_KEY);
-    return saved && (SPEEDS as readonly number[]).includes(saved) ? saved : 1;
-  });
   const [resumedAt, setResumedAt] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (videoRef.current) videoRef.current.playbackRate = rate;
-  }, [rate]);
 
   const save = (seconds: number) => {
     try {
@@ -64,7 +53,8 @@ export function LessonVideo({ src, storageKey, serverPosition, onSavePosition }:
   const handleLoadedMetadata = () => {
     const video = videoRef.current;
     if (!video) return;
-    video.playbackRate = rate;
+    const savedRate = readNumber(RATE_KEY);
+    if (savedRate && savedRate <= 4) video.playbackRate = savedRate;
     const pos = Math.max(readNumber(posKey) ?? 0, serverPosition ?? 0);
     // Skip tiny offsets and the last few seconds (treat as finished).
     if (pos > 5 && pos < video.duration - 10) {
@@ -82,10 +72,11 @@ export function LessonVideo({ src, storageKey, serverPosition, onSavePosition }:
     save(video.currentTime);
   };
 
-  const changeRate = (r: number) => {
-    setRate(r);
+  const rememberRate = () => {
+    const video = videoRef.current;
+    if (!video) return;
     try {
-      localStorage.setItem(RATE_KEY, String(r));
+      localStorage.setItem(RATE_KEY, String(video.playbackRate));
     } catch {
       // ignore
     }
@@ -113,6 +104,7 @@ export function LessonVideo({ src, storageKey, serverPosition, onSavePosition }:
           preload="metadata"
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
+          onRateChange={rememberRate}
           onPause={() => videoRef.current && save(videoRef.current.currentTime)}
           // Finished — next visit starts from the beginning.
           onEnded={() => save(0)}
@@ -120,45 +112,19 @@ export function LessonVideo({ src, storageKey, serverPosition, onSavePosition }:
         />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        {resumedAt !== null ? (
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <span>เล่นต่อจาก {formatTime(resumedAt)}</span>
-            <button
-              type="button"
-              onClick={restart}
-              className="inline-flex h-11 items-center gap-1 rounded-lg px-2 text-brand-700 hover:bg-brand-50"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              เริ่มใหม่
-            </button>
-          </div>
-        ) : (
-          <span />
-        )}
-        <div
-          className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1"
-          role="group"
-          aria-label="ความเร็ววิดีโอ"
-        >
-          <span className="px-2 text-xs text-slate-500">ความเร็ว</span>
-          {SPEEDS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => changeRate(s)}
-              aria-pressed={rate === s}
-              className={`h-11 min-w-11 rounded-lg px-2 text-sm font-medium tabular-nums transition-colors ${
-                rate === s
-                  ? "bg-brand-700 text-white"
-                  : "text-slate-600 hover:bg-brand-50 hover:text-brand-700"
-              }`}
-            >
-              {s}x
-            </button>
-          ))}
+      {resumedAt !== null && (
+        <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+          <span>เล่นต่อจาก {formatTime(resumedAt)}</span>
+          <button
+            type="button"
+            onClick={restart}
+            className="inline-flex h-11 items-center gap-1 rounded-lg px-2 text-brand-700 hover:bg-brand-50"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            เริ่มใหม่
+          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
